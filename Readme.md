@@ -163,7 +163,7 @@ There are keyboard shortcuts to call the functions; hover the mouse over the but
 
 **Merge:** This merges two or more selected contiguous cells in a single mesh.
 
-<iframe width="560" height="315" src="https://www.youtube.com/embed/mK8IlsS0CT0" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+![https://youtu.be/mK8IlsS0CT0](Images/Merge_vid.png)
 
 [Link to video](https://youtu.be/mK8IlsS0CT0)
 
@@ -183,13 +183,13 @@ There are keyboard shortcuts to call the functions; hover the mouse over the but
 
 Spliting with `BISECT`
 
-<iframe width="560" height="315" src="https://www.youtube.com/embed/IbCE5WAFq94" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+![https://youtu.be/IbCE5WAFq94](Images/Split_Bisect_vid.png)
 
 [Link to video](https://youtu.be/IbCE5WAFq94)
 
 Spliting with `KNIFE`
 
-<iframe width="560" height="315" src="https://www.youtube.com/embed/cxdl3-XK8Rg" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+![https://youtu.be/cxdl3-XK8Rg](Images/Split_Knif_vid.png)
 
 [Link to video](https://youtu.be/cxdl3-XK8Rg)
 
