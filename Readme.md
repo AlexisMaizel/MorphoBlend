@@ -20,7 +20,7 @@
 
 ## Requirements
 
-- `Blender`: [Blender website](www.blender.org) v2.8 or higher.
+- `Blender`: [download](www.blender.org) v2.8 or higher.
 - A basic understanding of how Blender is working. See [this series of videos to get started](https://www.youtube.com/playlist?list=PLa1F2ddGya_-UvuAqHAksYnB0qL9yWDO6).
 
 ## Installation
@@ -28,6 +28,9 @@
 **MorphoBlend** installs as any other `Blender` addon.
 
 - Download **Morphoblend** as a `zip` file.
+
+![](Images/dl_zip.png)
+
 - Open `Blender`.
 - Install the addon as [described here](https://docs.blender.org/manual/en/latest/editors/preferences/addons.html).
 
