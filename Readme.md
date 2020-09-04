@@ -15,37 +15,21 @@
 - Can efficiently handle thousands of cells.
 - Built in tools for processing (coloring, renaming, filtering, sorting).
 - Merging and splitting of cells.
+- Easy navigation through time series
 - Quantification, visualisation and export of cell attributes (volume, area, ...).
 - ... more to come :-).
 
-## Requirements
+## Release notes
 
-- `Blender`: [download](www.blender.org) v2.8 or higher.
-- A basic understanding of how Blender is working. See [this series of videos to get started](https://www.youtube.com/playlist?list=PLa1F2ddGya_-UvuAqHAksYnB0qL9yWDO6).
+##### v0.3.5 | Time point navigation [2020-09-04]
 
-## Installation
-
-**MorphoBlend** installs as any other `Blender` addon.
-
-- Download **Morphoblend** as a `zip` file.
-
-![](Images/dl_zip.png)
-
-- Open `Blender`.
-- Install the addon as [described here](https://docs.blender.org/manual/en/latest/editors/preferences/addons.html).
-
-## Gallery
-
-![Gallery](Images/LR_1.png)
-![Gallery](Images/LR_2.png)
-![Gallery](Images/Ovule.png)
-![Gallery](Images/Ovule2.png)
-
-## Versions
+- Navigate through time points using the keyboard
+- Clear the *Filter results* collection (without deleting the objects!)
+- Improved readability and style of code
 
 ##### v0.3.4 | Filter cells based on volume [2020-08-14]
 
-  Cells which volume is in a given range are selected and listed (as aliases) in a *Filter results* collection. Works on a selection or on *all* cells of the scene (visible or not).
+Cells which volume is in a given range are selected and listed (as aliases) in a *Filter results* collection. Works on a selection or on *all* cells of the scene (visible or not).
 
 ##### v0.3.3 | Bulk color cells in collection [2020-08-12]
 
@@ -70,6 +54,29 @@ Quantification of cell volumes & area.
 
 Import and Process modules implemented.
 
+## Requirements
+
+- `Blender v2.83.5 LTS`: [download](https://www.blender.org/download/lts/).
+- A basic understanding of Blender. See [this series of videos to get started](https://www.youtube.com/playlist?list=PLa1F2ddGya_-UvuAqHAksYnB0qL9yWDO6).
+
+## Installation
+
+**MorphoBlend** installs as any other `Blender` addon.
+
+- Download **Morphoblend** as a `zip` file.
+
+![download Morphoblend](Images/dl_zip.png)
+
+- Open `Blender`.
+- Install the addon as [described here](https://docs.blender.org/manual/en/latest/editors/preferences/addons.html).
+
+## Gallery
+
+![Gallery](Images/LR_1.png)
+![Gallery](Images/LR_2.png)
+![Gallery](Images/Ovule.png)
+![Gallery](Images/Ovule2.png)
+
 ## Acknowledgments
 
 The following people have actively contributed to the development, improvement or test of **MorphoBlend**:
@@ -87,6 +94,13 @@ It consists of several modules:
 - Quantify
 
 ![The MorphoBlend AddOn](Images/MorphoBlend.png)
+
+### Keyboard shortcuts
+
+- Navigate through time points:
+Mouse pointer *must* be in main window and time points *must* be collections starting with `t` or `T` followed by digits only (*e.g.* `t42` or `T123`):
+  - `Ctrl+Shift+Down_arrow`: next time point
+  - `Ctrl+Shift+Up_arrow`: previous time point
 
 ### Import
 
@@ -171,11 +185,10 @@ There are keyboard shortcuts to call the functions; hover the mouse over the but
 
 - **Phase 1 - Cutting the cells**:
     1. Press the `Start split` button this will activate the mesh edit mode  **just for the cell to split**. No need to worry about the other cells around, they can't be edited.
-    2. Using the `KNIFE` or `BISECT` tools (located on the left tool bar), delineated a plan (`BISECT` tool) or a path (`KNIFE` tool) on the mesh along which the cells will be cut. 
+    2. Using the `KNIFE` or `BISECT` tools (located on the left tool bar), delineated a plan (`BISECT` tool) or a path (`KNIFE` tool) on the mesh along which the cells will be cut.
     3. Press `ENTER`
     4. Press `V` to rip the mesh apart. Do ***not*** touch the mouse, use the keybaord arrows to move the cut a little (3-4 keystrokes are sufficient).
     5. Press `ENTER`.
-
 
 - **Phase 2 - Finalise the split** Press the `Finish Split`. The split cells will be separated in two new cells and their names updated.
 
@@ -219,7 +232,7 @@ Not yet implemented.
 
 Not yet implemented.
 
-## Known bugs
+## Known bugs & limitations
 
 **Import**: The very first import after (re)starting Blender usually skips the first file. Erasing the cells, and repeating the import solves the issue.
 

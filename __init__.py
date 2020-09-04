@@ -14,9 +14,9 @@
 bl_info = {
     "name" : "MorphoBlend",
     "author" : "Alexis Maizel",
-    "description" : "Addon for visualisation and quantification of plant cell segmentation",
-    "blender" : (2, 83, 0),
-    "version" : (0, 3, 4),
+    "description" : "Addon for visualisation, processing and quantification of cell segmentation",
+    "blender" : (2, 83, 5),
+    "version" : (0, 3, 5),
     "location" : "View3D",
     "warning" : "",
     "category" : "Generic"

@@ -15,6 +15,16 @@ from . Utilities import (create_materials_palette, assign_color, rgb_to_rgbaf, a
 from . Quantify import (volume_and_area_from_object)
 
 # ------------------------------------------------------------------------
+#    Keymaps
+# ------------------------------------------------------------------------
+PT_Edit_keymaps = []
+
+# ------------------------------------------------------------------------
+#    Global variable
+# ------------------------------------------------------------------------
+g_tp_pattern =  "[tT]\d{1,}"
+
+# ------------------------------------------------------------------------
 #    Properties
 # ------------------------------------------------------------------------
 class ProcessProperties(PropertyGroup):
@@ -90,6 +100,7 @@ class ProcessProperties(PropertyGroup):
 #    Operators
 # ------------------------------------------------------------------------
 class MORPHOBLEND_OT_Colorize(bpy.types.Operator):
+    """Assign random color to selected objects."""
     bl_idname = "morphoblend.colorize"
     bl_label = "Colorize"
     bl_descripton = "Assign random color to selected objects."
@@ -217,7 +228,29 @@ class MORPHOBLEND_OT_SelectOnVolume(bpy.types.Operator):
         self.report({'INFO'}, info_mess)
         return {'FINISHED'}
 
+class MORPHOBLEND_OT_ClearFilter(bpy.types.Operator):
+    bl_idname = "morphoblend.clearfilter"
+    bl_label = "Clear results filter on Volume"
+    bl_descripton = "Clear the Filter Result list."
 
+    filter_coll_name = "Filter Results"
+
+    @classmethod
+    def poll(cls, context):
+        scene  = context.scene
+        process_op  = scene.process_tool
+        return cls.filter_coll_name  in bpy.data.collections
+
+    def execute(self, context):
+        scene  = context.scene
+        process_op  = scene.process_tool
+        filt_coll = bpy.data.collections[self.filter_coll_name]
+        while filt_coll.objects:
+            filt_coll.objects.unlink(filt_coll.objects[0])
+
+        info_mess = self.filter_coll_name + " emptied!"
+        self.report({'INFO'}, info_mess)
+        return {'FINISHED'}
 
 class MORPHOBLEND_OT_FinalizeModifiers(bpy.types.Operator):
     bl_idname = "morphoblend.finalizemodifiers"
@@ -284,6 +317,62 @@ class MORPHOBLEND_OT_Arrange(bpy.types.Operator):
         self.report({'INFO'}, info_mess)
         return {'FINISHED'}
 
+
+class MORPHOBLEND_OT_NextTimePoint(bpy.types.Operator):
+    bl_idname = "morphoblend.next_timepoint"
+    bl_label = "Next time points"
+    bl_descripton = "Make next time points collections visible."
+    bl_options = {'REGISTER', 'INTERNAL'}
+
+    @classmethod
+    def poll(cls, context):
+        return True
+
+    def execute(self, context):
+        # Get all TP collections at the topmost level
+        all_tp_cols = getTopLevelTPCollections(g_tp_pattern)
+        # Retrieve the currently active TP collection and make it the only visible
+        currentTPcoll = showActiveTP(context)
+        # Get the next time point and display it
+        next_tp = CollectionNavigtor(all_tp_cols, currentTPcoll, "next")
+        if next_tp is not False:
+            currentTPcoll.hide_viewport=True
+            next_tp.hide_viewport=False
+            layer_collection = bpy.context.view_layer.layer_collection.children[next_tp.name]
+            bpy.context.view_layer.active_layer_collection = layer_collection
+            info_mess = "Visible: " + next_tp.name
+            self.report({'INFO'}, info_mess)
+        else:
+            self.report({'WARNING'}, "Problem")
+        return{'FINISHED'}
+
+class MORPHOBLEND_OT_PreviousTimePoint(bpy.types.Operator):
+    bl_idname = "morphoblend.previous_timepoint"
+    bl_label = "Previous time points"
+    bl_descripton = "Make previous time points collections visible."
+    bl_options = {'REGISTER', 'INTERNAL'}
+
+    @classmethod
+    def poll(cls, context):
+        return True
+
+    def execute(self, context):
+        # Get all TP collections at the topmost level
+        all_tp_cols = getTopLevelTPCollections(g_tp_pattern)
+        # Retrieve the currently active TP collection and make it the only visible
+        currentTPcoll = showActiveTP(context)
+        # Get the next time point and display it
+        next_tp = CollectionNavigtor(all_tp_cols, currentTPcoll, "previous")
+        if next_tp is not False:
+            currentTPcoll.hide_viewport=True
+            next_tp.hide_viewport=False
+            layer_collection = bpy.context.view_layer.layer_collection.children[next_tp.name]
+            bpy.context.view_layer.active_layer_collection = layer_collection
+            info_mess = "Visible: " + next_tp.name
+            self.report({'INFO'}, info_mess)
+        else:
+            self.report({'WARNING'}, "Problem")
+        return{'FINISHED'}
 
 # ------------------------------------------------------------------------
 #    UI elements
@@ -383,20 +472,100 @@ class MORPHOBLEND_PT_Process(bpy.types.Panel):
         row = box.row()
         row.prop(process_op, "bool_vol_all")
         row.operator(MORPHOBLEND_OT_SelectOnVolume.bl_idname, text = "Filter")
+        row.operator(MORPHOBLEND_OT_ClearFilter.bl_idname, text = "Clear Results")
 
 # ------------------------------------------------------------------------
 #    Registrer/unregister calls
 # ------------------------------------------------------------------------
-classes = (ProcessProperties, MORPHOBLEND_OT_Colorize, MORPHOBLEND_OT_ColorizeInColl,  MORPHOBLEND_OT_FinalizeModifiers, MORPHOBLEND_OT_Rename, MORPHOBLEND_OT_Arrange, MORPHOBLEND_OT_SelectOnVolume,)
+classes = (ProcessProperties,
+MORPHOBLEND_OT_Colorize,
+MORPHOBLEND_OT_ColorizeInColl,
+MORPHOBLEND_OT_FinalizeModifiers,
+MORPHOBLEND_OT_Rename,
+MORPHOBLEND_OT_Arrange,
+MORPHOBLEND_OT_SelectOnVolume,
+MORPHOBLEND_OT_ClearFilter,
+MORPHOBLEND_OT_NextTimePoint,
+MORPHOBLEND_OT_PreviousTimePoint,)
 
 register_classes, unregister_classes = bpy.utils.register_classes_factory(classes)
 
 def register_process():
     register_classes()
     bpy.types.Scene.process_tool = PointerProperty(type=ProcessProperties)
+    # Define  keymaps
+    wm = bpy.context.window_manager
+    kc = wm.keyconfigs.addon
+    # MORPHOBLEND_OT_NextTimePoint --> Ctrl + Shift + down_arrow
+    if kc:
+        km = kc.keymaps.new(name='3D View', space_type='VIEW_3D')
+        kmi = km.keymap_items.new(MORPHOBLEND_OT_NextTimePoint.bl_idname, type = 'DOWN_ARROW', value =  'PRESS', ctrl=True, shift=True)
+    PT_Edit_keymaps.append((km, kmi))
+    # MORPHOBLEND_OT_WorkListRemove --> Ctrl + Shift + up_arrow
+    if kc:
+        km = kc.keymaps.new(name='3D View', space_type='VIEW_3D')
+        kmi = km.keymap_items.new(MORPHOBLEND_OT_PreviousTimePoint.bl_idname, type = 'UP_ARROW', value =  'PRESS', ctrl=True, shift=True)
+    PT_Edit_keymaps.append((km, kmi))
+
 
 
 def unregister_process():
     unregister_classes()
     del bpy.types.Scene.process_tool
+    # handle the keymap
+    for km, kmi in PT_Edit_keymaps:
+        km.keymap_items.remove(kmi)
+    PT_Edit_keymaps.clear()
 
+
+# ------------------------------------------------------------------------
+#    Local functions
+# ------------------------------------------------------------------------
+
+def getTopLevelTPCollections(in_tp_pattern):
+    """ Returns a list of all collections which name matches the pattern"""
+    # The regex identifying TP
+    pattern = re.compile(in_tp_pattern)
+    # list of all collections at 1st level
+    scn_col = bpy.context.scene.collection  # Root collection
+    root_cols  = col_hierarchy(scn_col, levels=1)
+    all_tp_cols = [k for k in root_cols.values()][0]
+    # Only keep collections that are time points
+    for col in all_tp_cols:
+        if not pattern.match(col.name):
+            all_tp_cols.remove(col)
+    return all_tp_cols
+
+def showActiveTP(context):
+    """Get the last active time point collection and make it the only one visible in viewport"""
+    all_tp_cols = getTopLevelTPCollections(g_tp_pattern)
+    current_col = context.collection
+    if re.match(g_tp_pattern, current_col.name):
+        currentTPcoll = current_col
+    else:
+        currentTPcoll = all_tp_cols[-1]
+    # Only the current TP is visible on screen
+    for col in all_tp_cols:
+        if col == currentTPcoll:
+            col.hide_viewport=False
+        else:
+            col.hide_viewport=True
+    return currentTPcoll
+
+def CollectionNavigtor(inCollList, inCurrentColl, direction):
+    """Returns the next/previous time point collection  relative to the one passed in, return FALSE if error"""
+    # Get index of the timepoint in the hierarchy
+    tpcol_index = inCollList.index(inCurrentColl)
+    if direction == "next":
+        dir = +1
+    elif direction == "previous":
+        dir = -1
+    else:
+        return False
+    # Return the next/previous object if  within bounds, or the last/first
+    if 0 <= tpcol_index + dir < len(inCollList):
+        return inCollList[tpcol_index + dir]
+    elif tpcol_index + dir > len(inCollList)-1:
+        return  inCollList[0]
+    else:
+        return  inCollList[len(inCollList)-1]
