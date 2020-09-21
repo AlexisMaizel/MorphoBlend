@@ -17,15 +17,23 @@
 - Merging and splitting of cells.
 - Easy navigation through time series
 - Quantification, visualisation and export of cell attributes (volume, area, ...).
+- Assign root tissues
 - ... more to come :-).
 
 ## Release notes
 
+##### v0.4.0 | Assign root tissues & headless import [2020-09-21]
+
+- Assign radial root tissues (layers)
+- Set visibility of groups of tissues
+- Headless import: it is now possible to import PLY files directly from the command line.
+- Voxel dimensions (*x* and *y*) are now set from the magnification.
+
 ##### v0.3.5 | Time point navigation [2020-09-04]
 
-- Navigate through time points using the keyboard
-- Clear the *Filter results* collection (without deleting the objects!)
-- Improved readability and style of code
+- Navigate through time points using the keyboard.
+- Clear the *Filter results* collection (without deleting the objects!).
+- Improved readability and style of code.
 
 ##### v0.3.4 | Filter cells based on volume [2020-08-14]
 
@@ -92,6 +100,7 @@ It consists of several modules:
 - Process
 - Edit
 - Quantify
+- Render
 
 ![The MorphoBlend AddOn](Images/MorphoBlend.png)
 
@@ -99,8 +108,8 @@ It consists of several modules:
 
 - Navigate through time points:
 Mouse pointer *must* be in main window and time points *must* be collections starting with `t` or `T` followed by digits only (*e.g.* `t42` or `T123`):
-  - `Ctrl+Shift+Down_arrow`: next time point
-  - `Ctrl+Shift+Up_arrow`: previous time point
+  - `Ctrl + Shift + Down_arrow`: **next** time point
+  - `Ctrl + Shift + Up_arrow`: **previous** time point
 
 ### Import
 
@@ -133,9 +142,11 @@ Files located in a subfolder will be automatically placed in a sub-collection of
 
 **Microscope settings:**
 
-- **Magnification**: magnification of the lense used during imaging. [*Currently not used*].
+- **Magnification**: magnification of the lense used during imaging.
 
-- **Voxel size**: physical dimensions of the voxel in µm. This controls the anisotrpic scaling of the meshes and all calculations (volume, area, dimensions...).
+- **Camera pixel size**: physical dimensions of the camera pixel (default is 6.5µm).
+
+- **Voxel size**: physical dimensions of the voxel in µm. *X* and *Y* values are computed from the camera pixel size and the magnification used. This controls the anisotropic scaling of the meshes and all calculations (volume, area, dimensions...).
 
 **Post-processing:**
 
@@ -146,6 +157,35 @@ Files located in a subfolder will be automatically placed in a sub-collection of
 - **Color cells**:  to assign or not a color at random from the selected **palette**.
 
 **Import:** Pressing this button will start the import process. The bar indicates progress. **(!)** Check *known bug section*.
+
+**Translate to origin:** Pressing this button will translate *all* objects so that they are centered onto the scene origin.
+
+#### Importing files from the command line (headless import)
+
+The import function is relatively slow. If you have large numbers of objects to import, it is recommended to import the `PLY` files into a new file directly from the command line (without `Blender`'s GUI). This speeds up the process drastically, especially on machines with several cores.
+
+To do so, you need to launch `Blender` from a terminal in the so called *background* or *headless* mode and use the script `import_headless.py` which can be [downloaded here](import_headless.py):
+
+```python
+blender -b -P import_headless.py -- --path ~/Desktop/Jaz_test_ply --voxel 0.250 0.1083 0.1083 --rotation O O O
+```
+
+The `-b` option tells `Blender` to run in the background,  `-P` the path to the script to execute, and everything beyond `--` are the script arguments.
+
+There are three mandatory arguments:
+
+- `--path`: the path to the folder containing the `ply` files to import
+- `--voxel`: the Voxel dimensions in µm (x/y/z)
+- `--rotation`: Rotation to apply to each axis in deg (x/y/z)
+
+See [this page](https://caretdashcaret.com/2015/05/19/how-to-run-blender-headless-from-the-command-line-without-the-gui/) for instructions on how to retrieve the path to `Blender` on your machine.
+
+**Good to know**:
+
+- the resulting `Blender` file is named  `Output.blend` and saved at the location passed to `--path`
+- the project is automatically saved after import of all files in a time point folder (`tXX` or `Txx`) has completed
+- progresses of the import are logged in `Output.log`
+- Because of the way `Blender` works, the time required to import an object increases exponentially with the amounts of objects in the scence. Consequence: it is advisable to split the import of thousands of objects in several batches that can be later combined by importing the collections from one `Blender`.
 
 ### Process
 
@@ -226,7 +266,28 @@ The output file will contain in addition to the name of the cell and the collect
 
 ### Render
 
-Not yet implemented.
+This modules contains tools to arrange and visualise cells and tissues.
+
+![The Render Module](Images/Render.png)
+
+**Assign root layers:** This will assign *Epidermis*, *Cortex*, *Endodermis* and *Stele* identity based on the radial distance from the center of the root.
+For this you must:
+
+- define the radial plane by ticking the appropriate boxes.
+- Indicate the position of the root center. You can enter the values directly in the *X/Y/Z* fields **OR** position it interactively by pressing the **'Interactive'** button.
+- define how far from the center the Endodermis, Cortex and Epidermis are located.
+- You can assign layers only to the selected cells or to *all* cells (visible or not) by ticking **'Assign to all'**
+- You can assign a color to all cells in the layers by ticking **'Color cells'**
+- Layers are assigned after you press **'Assign layers'**.
+- Assignements can be cleared by pressing **'Clear layers'**.
+
+**Demo:**
+
+![https://youtu.be/E-JgUqVLHZM](Images/Render_vid.png)
+
+[Link to video](https://youtu.be/E-JgUqVLHZM)
+
+**Show/hide collections:** This will set the visibility of *any collection* which names matches the string in **'Search'**(regex accepted!). Press **'Set'** to execute. This is very useful to toggle th visibility of tissues accross all time points.
 
 ### Export
 

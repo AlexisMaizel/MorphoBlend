@@ -1,14 +1,15 @@
 import bpy
 
+
 class BL_UI_OT_draw_operator(Operator):
-    bl_idname = "object.bl_ui_ot_draw_operator"
-    bl_label = "bl ui widgets operator"
-    bl_description = "Operator for bl ui widgets"
+    bl_idname = 'object.bl_ui_ot_draw_operator'
+    bl_label = 'bl ui widgets operator'
+    bl_description = 'Operator for bl ui widgets'
     bl_options = {'REGISTER'}
 
     def __init__(self):
         self.draw_handle = None
-        self.draw_event  = None
+        self.draw_event = None
         self.widgets = []
 
     def init_widgets(self, context, widgets):
@@ -24,17 +25,17 @@ class BL_UI_OT_draw_operator(Operator):
         args = (self, context)
         self.register_handlers(args, context)
         context.window_manager.modal_handler_add(self)
-        return {"RUNNING_MODAL"}
+        return {'RUNNING_MODAL'}
 
     def register_handlers(self, args, context):
-        self.draw_handle = bpy.types.SpaceView3D.draw_handler_add(self.draw_callback_px, args, "WINDOW", "POST_PIXEL")
+        self.draw_handle = bpy.types.SpaceView3D.draw_handler_add(self.draw_callback_px, args, 'WINDOW', 'POST_PIXEL')
         self.draw_event = context.window_manager.event_timer_add(0.1, window=context.window)
 
     def unregister_handlers(self, context):
         context.window_manager.event_timer_remove(self.draw_event)
-        bpy.types.SpaceView3D.draw_handler_remove(self.draw_handle, "WINDOW")
+        bpy.types.SpaceView3D.draw_handler_remove(self.draw_handle, 'WINDOW')
         self.draw_handle = None
-        self.draw_event  = None
+        self.draw_event = None
 
     def handle_widget_events(self, event):
         result = False
@@ -50,16 +51,16 @@ class BL_UI_OT_draw_operator(Operator):
         if self.handle_widget_events(event):
             return {'RUNNING_MODAL'}
 
-        if event.type in {"ESC"}:
+        if event.type in {'ESC'}:
             self.unregister_handlers(context)
             return {'CANCELLED'}
-        return {"PASS_THROUGH"}
+        return {'PASS_THROUGH'}
 
     def finish(self):
         self.unregister_handlers(context)
-        return {"FINISHED"}
+        return {'FINISHED'}
 
-	# Draw handler to paint onto the screen
+    # Draw handler to paint onto the screen
     def draw_callback_px(self, op, context):
         for widget in self.widgets:
             widget.draw()
