@@ -341,9 +341,7 @@ register_classes, unregister_classes = bpy.utils.register_classes_factory(classe
 
 def register_edit():
     register_classes()
-    #
     # Define  keymaps
-    #
     wm = bpy.context.window_manager
     kc = wm.keyconfigs.addon
     # MORPHOBLEND_OT_WorkListAdd --> Ctrl + Shift + A

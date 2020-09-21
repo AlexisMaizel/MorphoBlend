@@ -11,6 +11,9 @@ import numpy as np
 from mathutils import Matrix, Vector
 
 
+g_tp_pattern = '^[Tt]\d{2,}'
+
+
 def args_parser():
     parser = argparse.ArgumentParser()
     # get all script args
@@ -36,7 +39,6 @@ def main():
     # Remove everything from the project
     for o in bpy.context.scene.objects:
         o.select_set(True)
-    # Call the operator only once
     bpy.ops.object.delete()
     initialise('Qual_bright', args.voxel, args.rotation)
     global g_random_color, g_apply_mod, n_files_imported, num_files_to_import
@@ -50,7 +52,7 @@ def main():
     for child in sorted(Path(bpy.path.abspath(args.path)).iterdir()):
         # FIXME weird bug/ the 1st .PLY file of a series at root level is not imported -  but it is imported when relaunched.
         # If this is a tXX folder
-        if (child.is_dir() and re.match('^[Tt]\d{2, }', child.name)):
+        if (child.is_dir() and re.match(g_tp_pattern, child.name)):
             # Create tXX collection unless it already exist
             if child.name not in bpy.data.collections:
                 tp_coll = bpy.data.collections.new(name=child.name)
@@ -175,7 +177,7 @@ def retrieve_global_coordinates(inObj):
 def number_of_file_to_import(inPath):
     _n_file = 0
     for child in sorted(Path(inPath).iterdir()):
-        if (child.is_dir() and re.match('t\d{2, }', child.name)):
+        if (child.is_dir() and re.match(g_tp_pattern, child.name)):
             for grandchild in sorted(Path(child).iterdir()):
                 if grandchild.is_file() and grandchild.name.endswith('.ply'):
                     _n_file += 1

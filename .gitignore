@@ -1,4 +1,5 @@
 /__pycache__/
+test_*
 settings.json
 Roadmap.md
 /MorphoBlend_LUT_generation/

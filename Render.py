@@ -13,7 +13,7 @@ from .Utilities import (assign_material, col_hierarchy,
 # ------------------------------------------------------------------------
 #    Keymaps
 # ------------------------------------------------------------------------
-PT_Edit_keymaps = []
+PT_Render_keymaps = []
 
 # ------------------------------------------------------------------------
 #    Global variable
@@ -540,21 +540,23 @@ def register_render():
     # Define  keymaps
     wm = bpy.context.window_manager
     kc = wm.keyconfigs.addon
+    if kc:
     # MORPHOBLEND_OT_NextTimePoint --> Ctrl + Shift + down_arrow
-    km = kc.keymaps.new(name='3D View', space_type='VIEW_3D')
-    kmi = km.keymap_items.new(MORPHOBLEND_OT_NextTimePoint.bl_idname, type='DOWN_ARROW', value='PRESS', ctrl=True, shift=True)
-    PT_Edit_keymaps.append((km, kmi))
+        km = kc.keymaps.new(name='3D View', space_type='VIEW_3D')
+        kmi = km.keymap_items.new(MORPHOBLEND_OT_NextTimePoint.bl_idname, type='DOWN_ARROW', value='PRESS', ctrl=True, shift=True)
+        PT_Render_keymaps.append((km, kmi))
 
     # MORPHOBLEND_OT_PreviousTimePoint --> Ctrl + Shift + up_arrow
-    km = kc.keymaps.new(name='3D View', space_type='VIEW_3D')
-    kmi = km.keymap_items.new(MORPHOBLEND_OT_PreviousTimePoint.bl_idname, type='UP_ARROW', value='PRESS', ctrl=True, shift=True)
-    PT_Edit_keymaps.append((km, kmi))
+    if kc:
+        km = kc.keymaps.new(name='3D View', space_type='VIEW_3D')
+        kmi = km.keymap_items.new(MORPHOBLEND_OT_PreviousTimePoint.bl_idname, type='UP_ARROW', value='PRESS', ctrl=True, shift=True)
+        PT_Render_keymaps.append((km, kmi))
 
 
 def unregister_render():
     # handle the keymap
-    for km, kmi in PT_Edit_keymaps:
+    for km, kmi in PT_Render_keymaps:
         km.keymap_items.remove(kmi)
-    PT_Edit_keymaps.clear()
+    PT_Render_keymaps.clear()
     del bpy.types.Scene.render_tool
     unregister_classes()

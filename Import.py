@@ -14,6 +14,11 @@ from .Utilities import (apply_modifiers, assign_material,
 
 
 # ------------------------------------------------------------------------
+#    Global variables
+# ------------------------------------------------------------------------
+g_tp_pattern = '^[Tt]\d{2,}'
+
+# ------------------------------------------------------------------------
 #    Properties
 # ------------------------------------------------------------------------
 class ImportProperties(bpy.types.PropertyGroup):
@@ -144,7 +149,7 @@ class MORPHOBLEND_OT_Import(bpy.types.Operator):
         '''Retrieve the total number of files to be imported'''
         _n_file = 0
         for child in sorted(Path(inPath).iterdir()):
-            if (child.is_dir() and re.match('^[tT]\d{2,}', child.name)):
+            if (child.is_dir() and re.match(g_tp_pattern, child.name)):
                 for grandchild in sorted(Path(child).iterdir()):
                     if grandchild.is_file() and grandchild.name.endswith('.ply'):
                         _n_file += 1
@@ -258,9 +263,8 @@ class MORPHOBLEND_OT_Import(bpy.types.Operator):
         n_files_imported = 0
         # Main loop: Parsing the content of the input path
         for child in sorted(Path(bpy.path.abspath(import_prop.import_path)).iterdir()):
-            # FIXME weird bug/ the 1st .PLY file of a series at root level is not imported -  but it is imported when relaunched.
             # If this is a tXX folder
-            if (child.is_dir() and re.match('^[Tt]\d{2,}', child.name)):
+            if (child.is_dir() and re.match(g_tp_pattern, child.name)):
                 # Create tXX collection unless it already exist
                 if child.name not in bpy.data.collections:
                     tp_coll = bpy.data.collections.new(name=child.name)
