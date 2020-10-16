@@ -41,7 +41,7 @@ class ImportProperties(bpy.types.PropertyGroup):
         name='Path',
         description='Path to the folder containing the files to import',
         default='',
-        subtype='DIR_PATH'
+        subtype='FILE_PATH'
         )
     pixel_size: FloatProperty(
         name='',
@@ -149,13 +149,16 @@ class MORPHOBLEND_OT_Import(bpy.types.Operator):
     def number_of_file_to_import(self, inPath):
         '''Retrieve the total number of files to be imported'''
         _n_file = 0
-        for child in sorted(Path(inPath).iterdir()):
-            if (child.is_dir() and re.match(g_tp_pattern, child.name)):
-                for grandchild in sorted(Path(child).iterdir()):
-                    if grandchild.is_file() and grandchild.name.endswith('.ply'):
-                        _n_file += 1
-            elif child.is_file() and child.name.endswith('.ply'):
-                _n_file += 1
+        if Path(inPath).is_file:
+            _n_file += 1
+        else:
+            for child in sorted(Path(inPath).iterdir()):
+                if (child.is_dir() and re.match(g_tp_pattern, child.name)):
+                    for grandchild in sorted(Path(child).iterdir()):
+                        if grandchild.is_file() and grandchild.name.endswith('.ply'):
+                            _n_file += 1
+                elif child.is_file() and child.name.endswith('.ply'):
+                    _n_file += 1
         return _n_file
 
     def import_process_sort(self, inColl=None, inFilePath=''):
@@ -254,6 +257,7 @@ class MORPHOBLEND_OT_Import(bpy.types.Operator):
         # WARN This implements a progress bar but in a hacky way. Forced to call bpy.ops.wm.redraw_timer(type='DRAW_WIN_SWAP', iterations=1)
         # should find a way to use a modal operator for it. Issue: where to put the main call, in invoke() or in modal()?
         # see https://docs.blender.org/api/current/info_gotcha.html
+        # TODO  Refactor & document!
         self.initialise(import_prop.chosen_palette, import_prop.vox_dim, import_prop.rot_xyz)
         import_prop.progress_bar = 0
         global g_random_color, g_apply_mod, n_files_imported, num_files_to_import
@@ -262,31 +266,41 @@ class MORPHOBLEND_OT_Import(bpy.types.Operator):
         num_files_to_import = self.number_of_file_to_import(bpy.path.abspath(import_prop.import_path))
         outfile_path = Path(bpy.path.abspath(import_prop.import_path), output_basename).with_suffix('.blend')
         n_files_imported = 0
-        # Main loop: Parsing the content of the input path
-        for child in sorted(Path(bpy.path.abspath(import_prop.import_path)).iterdir()):
-            # If this is a tXX folder
-            if (child.is_dir() and re.match(g_tp_pattern, child.name)):
-                # Create tXX collection unless it already exist
-                if child.name not in bpy.data.collections:
-                    tp_coll = bpy.data.collections.new(name=child.name)
-                    bpy.context.scene.collection.children.link(tp_coll)
-                else:
-                    tp_coll = bpy.data.collections[child.name]
-                # Process all PLY files in the folder
-                for ply_file in sorted(child.glob('*.ply')):
-                    self.import_process_sort(inFilePath=ply_file.as_posix(), inColl=tp_coll)
+        inPath = Path(bpy.path.abspath(import_prop.import_path))
+        if inPath.is_dir():
+            # Main loop: Parsing the content of the input path
+            for child in sorted(inPath.iterdir()):
+                # If this is a tXX folder
+                if (child.is_dir() and re.match(g_tp_pattern, child.name)):
+                    # Create tXX collection unless it already exist
+                    if child.name not in bpy.data.collections:
+                        tp_coll = bpy.data.collections.new(name=child.name)
+                        bpy.context.scene.collection.children.link(tp_coll)
+                    else:
+                        tp_coll = bpy.data.collections[child.name]
+                    # Process all PLY files in the folder
+                    for ply_file in sorted(child.glob('*.ply')):
+                        self.import_process_sort(inFilePath=ply_file.as_posix(), inColl=tp_coll)
+                        self.progress_ratio = n_files_imported / num_files_to_import * 100
+                        import_prop.progress_bar = self.progress_ratio
+                        bpy.ops.wm.redraw_timer(type='DRAW_WIN_SWAP', iterations=1)
+                    # save project after each time point
+                    bpy.ops.wm.save_as_mainfile(filepath=outfile_path.as_posix())
+                elif (child.is_file() and child.name.endswith('.ply')):
+                    # Create a Imported collection unless it exists
+                    imp_coll = bpy.data.collections[g_import_coll_name]
+                    self.import_process_sort(inFilePath=child.as_posix(), inColl=imp_coll)
                     self.progress_ratio = n_files_imported / num_files_to_import * 100
                     import_prop.progress_bar = self.progress_ratio
                     bpy.ops.wm.redraw_timer(type='DRAW_WIN_SWAP', iterations=1)
-                # save project after each time point
-                bpy.ops.wm.save_as_mainfile(filepath=outfile_path.as_posix())
-            elif (child.is_file() and child.name.endswith('.ply')):
-                # Create a Imported collection unless it exists
-                imp_coll = bpy.data.collections[g_import_coll_name]
-                self.import_process_sort(inFilePath=child.as_posix(), inColl=imp_coll)
-                self.progress_ratio = n_files_imported / num_files_to_import * 100
-                import_prop.progress_bar = self.progress_ratio
-                bpy.ops.wm.redraw_timer(type='DRAW_WIN_SWAP', iterations=1)
+        elif inPath.is_file() and inPath.name.endswith('.ply'):
+            # Create a Imported collection unless it exists
+            imp_coll = bpy.data.collections[g_import_coll_name]
+            self.import_process_sort(inFilePath=inPath.as_posix(), inColl=imp_coll)
+            self.progress_ratio = n_files_imported / num_files_to_import * 100
+            import_prop.progress_bar = self.progress_ratio
+            bpy.ops.wm.redraw_timer(type='DRAW_WIN_SWAP', iterations=1)
+
         return {'FINISHED'}
 
 
@@ -362,7 +376,7 @@ class MORPHOBLEND_PT_Import(bpy.types.Panel):
 
         layout.row().separator()
         row = layout.row()
-        row.scale_y = 1.0
+        # TODO  I wonder if I need all this mess below --> clean?
         op = row.operator(MORPHOBLEND_OT_Import.bl_idname, text='Import')
         op.import_path = import_prop.import_path
         op.magnification = import_prop.magnification

@@ -18,9 +18,17 @@
 - Easy navigation through time series
 - Quantification, visualisation and export of cell attributes (volume, area, ...).
 - Assign root tissues
+- Tracking of cells
+- Extraction of 3D connectivity graph.
 - ... more to come :-).
 
 ## Release notes
+
+##### v0.5.0 | Cell tracking and 3D connectivity graph [2020-10-16]
+
+- Basic tracking of cells over time to establish lineages
+- Extraction of the 3D connectivity graph of cells
+- Code cleanup, bug fixing and misc. improvement
 
 ##### v0.4.0 | Assign root tissues & headless import [2020-09-21]
 
@@ -193,19 +201,18 @@ This modules handles the selection, colouring, sorting and filtering of the cell
 
 ![The MorphoBlend AddOn](Images/Process.png)
 
-**Assing color:** assign to a selection of cells either a specific color (prefix `[C]`) or a color at random in a palette (prefix `[P]`). In the latter case, pressing `Colorize` several times shuffle the color assignment, which is interesting when neighbouring cells have similar colors.
+**Assing color:** assign to a selection of cells either a specific color (prefix `[C]`) or a color at random in a palette (prefix `[P]`). In the latter case, pressing `Color` several times shuffle the color assignment, which is interesting when neighbouring cells have similar colors.
 
-**Bulk color cells in collection:** all cells of a collection matching a given pattern (`regex`-style) are assigned a specific color or colored randomely from the chosen palette.
+You can also color all cells in collection(s) matching the term on the pull down menu. Then press `Color all`  are assigned a specific color or colored randomely from the chosen palette.
 
-**Finalize modifiers:** will "burn" any mesh modifier (*eg* remesh,  decimate) applied to the selected cells. This can be a way to reduce numer of triangles (and file size), if the meshes were imported without finalizing the smoothing (see *Import*).
 
-**Rename:** will rename all selected objects. `regex`-style expression can be used in the search and replace fields.
+**Rename:** will rename all selected objects. `regex`-style expression can be used in the search and replace fields. `Replace all` will do this for all cells, also the hidden ones.
 
 **Group into collection:** will move all objects which name fit the `regex`-style expression, to a collection of the same name.
 
 **Filter on volume:** Cells which volume is in a given range are selected and listed (as *aliases*) in a *Filter results* collection. When `Apply filter to all` is ticked,  the filtering is applied to *all* cells of the scene (visible or not, selected or not).
 
-### Edit
+### Alter
 
 This module handles the modification of the cell meshes.
 
@@ -246,6 +253,55 @@ Spliting with `KNIFE`
 
 [Link to video](https://youtu.be/cxdl3-XK8Rg)
 
+### Analyze
+
+This module handles analyses on cells in tissues.
+
+![The MorphoBlend AddOn](Images/Analyze.png)
+
+**Assign root layers:** This will assign *Epidermis*, *Cortex*, *Endodermis* and *Stele* identity based on the radial distance from the center of the root.
+For this you must:
+
+- define the radial plane by ticking the appropriate boxes.
+- Indicate the position of the root center. You can enter the values directly in the *X/Y/Z* fields **OR** position it interactively by pressing the **'Interactive'** button.
+- define how far from the center the Endodermis, Cortex and Epidermis are located.
+- You can assign layers only to the selected cells or to *all* cells (visible or not) by ticking **'Assign to all'**
+- You can assign a color to all cells in the layers by ticking **'Color cells'**
+- Layers are assigned after you press **'Assign layers'**.
+- Assignements can be cleared by pressing **'Clear layers'**.
+
+**Demo:**
+
+![https://youtu.be/E-JgUqVLHZM](Images/Render_vid.png)
+
+[Link to video](https://youtu.be/E-JgUqVLHZM)
+
+**Track cells:** This will attempt to track cells over time by closest proximity. This is relatively crude but produces decent results for non dividing, non swelling cells.
+
+The sole parameter to tune is the `Threshold for tracking`: the higher the value the more tolerant.
+
+- Ticking `Track all cells` will track every single cells, not just the selected ones.
+- Press `Track` to start the tracking process.
+- Once  tracking data exist, pressing `Color` will assign a unique color to each lineage
+- To erase the track data, click `Clear`.
+
+The tracking data can  be exported / imported:
+
+- select the path
+- press `Import` or `Export`
+
+**3D connectivity graph:** This will generate the graph of cell connectivity: adjacent cells are nodes linked by an edge.
+
+- Ticking `Extract for all cells` will generate the graph of cell connectivity for  every single cells, not just the selected ones.
+- Press `Generate` to start the process. (!) **Beware** this can be long!
+- Once  tracking data exist, pressing `Draw` to visualise the resulting graph
+- To erase the track data, click `Clear`.
+
+The connectivity data can  be exported / imported:
+
+- select the path
+- press `Import` or `Export`
+
 ### Quantify
 
 This module handles all quantifications on cells.
@@ -270,22 +326,7 @@ This modules contains tools to arrange and visualise cells and tissues.
 
 ![The Render Module](Images/Render.png)
 
-**Assign root layers:** This will assign *Epidermis*, *Cortex*, *Endodermis* and *Stele* identity based on the radial distance from the center of the root.
-For this you must:
 
-- define the radial plane by ticking the appropriate boxes.
-- Indicate the position of the root center. You can enter the values directly in the *X/Y/Z* fields **OR** position it interactively by pressing the **'Interactive'** button.
-- define how far from the center the Endodermis, Cortex and Epidermis are located.
-- You can assign layers only to the selected cells or to *all* cells (visible or not) by ticking **'Assign to all'**
-- You can assign a color to all cells in the layers by ticking **'Color cells'**
-- Layers are assigned after you press **'Assign layers'**.
-- Assignements can be cleared by pressing **'Clear layers'**.
-
-**Demo:**
-
-![https://youtu.be/E-JgUqVLHZM](Images/Render_vid.png)
-
-[Link to video](https://youtu.be/E-JgUqVLHZM)
 
 **Show/hide collections:** This will set the visibility of *any collection* which names matches the string in **'Search'**(regex accepted!). Press **'Set'** to execute. This is very useful to toggle th visibility of tissues accross all time points.
 

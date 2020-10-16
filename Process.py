@@ -380,10 +380,11 @@ class MORPHOBLEND_PT_Process(bpy.types.Panel):
             text_box = f"Finalize Modifiers [{str(len(bpy.context.selected_objects))} selected cells]"
         else:
             text_box = f"Finalize Modifiers [{str(len(bpy.context.selected_objects))} selected cell]"
-        row.label(text=text_box, icon='MODIFIER_ON')'''
+        row.label(text=text_box, icon='MODIFIER_ON')
 
         row = box.row()
         row.operator(MORPHOBLEND_OT_FinalizeModifiers.bl_idname, text='Finalize')
+        '''
 
         box = layout.box()
         row = box.row()
