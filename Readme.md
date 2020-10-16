@@ -64,7 +64,7 @@ Import and Process modules implemented.
 
 ## Requirements
 
-- `Blender v2.83.5 LTS`: [download](https://www.blender.org/download/lts/).
+- `Blender v2.83.x LTS`: [download](https://www.blender.org/download/lts/).
 - A basic understanding of Blender. See [this series of videos to get started](https://www.youtube.com/playlist?list=PLa1F2ddGya_-UvuAqHAksYnB0qL9yWDO6).
 
 ## Installation

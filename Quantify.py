@@ -5,10 +5,9 @@ import bpy
 import numpy as np
 from bpy.props import (CollectionProperty, EnumProperty,
                        IntProperty, PointerProperty, StringProperty)
-from bpy.types import Operator, UIList
 
 from .Utilities import (Display2D_LUT_image, assign_material, create_materials_palette,
-                        get_collection, retrieve_global_coordinates,
+                        get_collection, get_global_coordinates,
                         volume_and_area_from_object, scaled_dimensions)
 
 
@@ -51,6 +50,7 @@ class Quantify_results(bpy.types.PropertyGroup):
 # ------------------------------------------------------------------------
 #    Operators
 # ------------------------------------------------------------------------
+# TODO  Pimp the UiList prosps --> https://sinestesia.co/blog/tutorials/amazing-uilists-in-blender/
 class MORPHOBLEND_OT_Morphometric(bpy.types.Operator):
     ''' Compute diverse morphometric measures on selected cells '''
     bl_idname = 'morphoblend.morphometric'
@@ -81,7 +81,7 @@ class MORPHOBLEND_OT_Morphometric(bpy.types.Operator):
                 obj_line.extend([f'{vol_obj:.3f}', f'{area_obj:.3f}'])
                 dims = scaled_dimensions(obj)
                 obj_line.extend([f'{dims[0]:.3f}', f'{dims[1]:.3f}', f'{dims[2]:.3f}'])
-                obj_center = retrieve_global_coordinates(obj)
+                obj_center = get_global_coordinates(obj)
                 obj_line.extend([f'{obj_center[0]:.3f}', f'{obj_center[1]:.3f}', f'{obj_center[2]:.3f}'])
                 print(obj_line)
                 bpy.ops.morphoblend.list_action(list_item=self.format_line(obj_line), action='ADD')
@@ -138,7 +138,7 @@ class MORPHOBLEND_OT_ListActions(bpy.types.Operator):
         return {'FINISHED'}
 
 
-class MORPHOBLEND_OT_clearList(Operator):
+class MORPHOBLEND_OT_clearList(bpy.types.Operator):
     ''' Clear all items of the list'''
     bl_idname = 'morphoblend.clear_list'
     bl_label = 'Clear List'
@@ -161,7 +161,7 @@ class MORPHOBLEND_OT_clearList(Operator):
         return{'FINISHED'}
 
 
-class MORPHOBLEND_OT_SaveItems(Operator):
+class MORPHOBLEND_OT_SaveItems(bpy.types.Operator):
     ''' Save all measurements to a CSV file'''
     bl_idname = 'morphoblend.save_measurements'
     bl_label = 'Save measurements to file'
@@ -184,7 +184,7 @@ class MORPHOBLEND_OT_SaveItems(Operator):
         return{'FINISHED'}
 
 
-class MORPHOBLEND_OT_ColorizeMetric(Operator):
+class MORPHOBLEND_OT_ColorizeMetric(bpy.types.Operator):
     ''' Colorize cells according to a metric'''
     bl_idname = 'morphoblend.colorize_metric'
     bl_label = ' colorize_metric'
@@ -204,7 +204,7 @@ class MORPHOBLEND_OT_ColorizeMetric(Operator):
     def poll(cls, context):
         return context.active_object is not None and context.object.select_get() and context.object.type == 'MESH'
 
-    def map_material_to_metric(self, nMeasRes, inPaletteName):
+    def map_material_to_metric(self, inMeasRes, inPaletteName):
         '''Maps an array of results on the range of colors in a palette. Returns a dict with the index of each results in the palette and the palette of materials'''
         mat_palette = create_materials_palette(inPaletteName)
         names_list = list(inMeasRes.keys())
@@ -251,7 +251,7 @@ class MORPHOBLEND_OT_ColorizeMetric(Operator):
 # ------------------------------------------------------------------------
 #    UI elements
 # ------------------------------------------------------------------------
-class MORPHOBLEND_UL_items(UIList):
+class MORPHOBLEND_UL_items(bpy.types.UIList):
     def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index):
         split = layout.split(factor=0.2)
         split.label(text='%d' % (index))
@@ -275,8 +275,7 @@ class MORPHOBLEND_PT_Quantify(bpy.types.Panel):
 
     def draw(self, context):
         layout = self.layout
-        scene = context.scene
-        quantify_pt = scene.quantify_tool
+        quantify_pt = context.scene.quantify_tool
 
         box = layout.box()
         row = box.row()
@@ -294,9 +293,9 @@ class MORPHOBLEND_PT_Quantify(bpy.types.Panel):
         row = box.row()
         row.label(text='Results', icon='RIGHTARROW')
 
-        rows = 6
+        rows = 5
         row = box.row()
-        row.template_list('MORPHOBLEND_UL_items', '', scene, 'results', scene, 'results_index', rows=rows)
+        row.template_list('MORPHOBLEND_UL_items', '', context.scene, 'results', context.scene, 'results_index', rows=rows)
 
         row = box.row()
         row.prop(quantify_pt, 'export_meas_path')

@@ -18,6 +18,7 @@ from .Utilities import (apply_modifiers, assign_material,
 # ------------------------------------------------------------------------
 g_tp_pattern = '^[Tt]\d{2,}'
 
+
 # ------------------------------------------------------------------------
 #    Properties
 # ------------------------------------------------------------------------
@@ -250,7 +251,7 @@ class MORPHOBLEND_OT_Import(bpy.types.Operator):
         scene = context.scene
         import_prop = scene.import_prop
         output_basename = 'Output'
-        # TODO This implements a progress bar but in a hacky way. Forced to call bpy.ops.wm.redraw_timer(type='DRAW_WIN_SWAP', iterations=1)
+        # WARN This implements a progress bar but in a hacky way. Forced to call bpy.ops.wm.redraw_timer(type='DRAW_WIN_SWAP', iterations=1)
         # should find a way to use a modal operator for it. Issue: where to put the main call, in invoke() or in modal()?
         # see https://docs.blender.org/api/current/info_gotcha.html
         self.initialise(import_prop.chosen_palette, import_prop.vox_dim, import_prop.rot_xyz)

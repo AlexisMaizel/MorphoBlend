@@ -2,6 +2,7 @@ from math import radians, sqrt
 from pathlib import Path
 from random import randrange
 
+import re
 import bgl
 import blf
 import bmesh
@@ -10,6 +11,7 @@ import gpu
 import numpy as np
 from gpu_extras.batch import batch_for_shader
 from mathutils import Matrix, Vector
+from itertools import tee, islice, chain
 
 
 # ------------------------------------------------------------------------
@@ -40,6 +42,7 @@ def create_materials_palette(inPaletteName):
     Qual_bright = [(166, 206, 227), (31, 120, 180), (178, 223, 138), (51, 160, 44), (251, 154, 153), (227, 26, 28), (253, 191, 111), (255, 127, 0), (202, 178, 214), (106, 61, 154), (255, 255, 153), (177, 89, 40)]
     Qual_pastel = [(141, 211, 199), (255, 255, 179), (190, 186, 218), (251, 128, 114), (128, 177, 211), (253, 180, 98), (179, 222, 105), (252, 205, 229), (217, 217, 217), (188, 128, 189), (204, 235, 197), (255, 237, 111)]
     Seq_viridis = [(68, 1, 84), (69, 16, 97), (70, 31, 110), (71, 44, 122), (67, 58, 128), (62, 71, 134), (58, 83, 139), (53, 94, 140), (47, 106, 141), (43, 116, 142), (39, 127, 142), (35, 139, 141), (34, 149, 139), (36, 159, 135), (38, 168, 131), (48, 178, 124), (69, 188, 112), (88, 198, 101), (112, 205, 87), (138, 212, 70), (165, 219, 53), (192, 223, 47), (223, 227, 42), (253, 231, 37)]
+    Col_0 = [(211, 211, 211)]
     Col_1 = [(166, 206, 227)]
     Col_2 = [(31, 120, 180)]
     Col_3 = [(178, 223, 138)]
@@ -48,8 +51,8 @@ def create_materials_palette(inPaletteName):
     Col_6 = [(227, 26, 28)]
     Col_7 = [(253, 191, 111)]
     Col_8 = [(255, 127, 0)]
-    palettes = [Seq_green, Seq_lila, Seq_blueGreen, Seq_red, Seq_blue, Seq_blueYellow, Seq_brown, Div_brownGreen, Div_lilaGreen, Div_violetGreen, Div_brownViolet, Div_french, Div_redBlue, Qual_bright, Qual_pastel, Seq_viridis, Col_1, Col_2, Col_3, Col_4, Col_5, Col_6, Col_7, Col_8]
-    palettes_names = ["Seq_green", "Seq_lila", "Seq_blueGreen", "Seq_red", "Seq_blue", "Seq_blueYellow", "Seq_brown", "Div_brownGreen", "Div_lilaGreen", "Div_violetGreen", "Div_brownViolet", "Div_french", "Div_redBlue", "Qual_bright", "Qual_pastel", "Seq_viridis", "Col_1", "Col_2", "Col_3", "Col_4", "Col_5", "Col_6", "Col_7", "Col_8"]
+    palettes = [Seq_green, Seq_lila, Seq_blueGreen, Seq_red, Seq_blue, Seq_blueYellow, Seq_brown, Div_brownGreen, Div_lilaGreen, Div_violetGreen, Div_brownViolet, Div_french, Div_redBlue, Qual_bright, Qual_pastel, Seq_viridis, Col_0, Col_1, Col_2, Col_3, Col_4, Col_5, Col_6, Col_7, Col_8]
+    palettes_names = ['Seq_green', 'Seq_lila', 'Seq_blueGreen', 'Seq_red', 'Seq_blue', 'Seq_blueYellow', 'Seq_brown', 'Div_brownGreen', 'Div_lilaGreen', 'Div_violetGreen', 'Div_brownViolet', 'Div_french', 'Div_redBlue', 'Qual_bright', 'Qual_pastel', 'Seq_viridis', 'Col_0', 'Col_1', 'Col_2', 'Col_3', 'Col_4', 'Col_5', 'Col_6', 'Col_7', 'Col_8']
 
     palette = palettes[palettes_names.index(inPaletteName)]
     _mat_palette = []
@@ -185,12 +188,37 @@ def ObjectNavigator(inCollection, inObj, direction):
         return False
 
 
+def previous_and_next(some_iterable):
+    ''' Return the previous and next element of any iteratable. Handle edge case graciously by returning 'None'.'''
+    prevs, items, nexts = tee(some_iterable, 3)
+    prevs = chain([None], prevs)
+    nexts = chain(islice(nexts, 1, None), [None])
+    return zip(prevs, items, nexts)
+
+
+def unique_colls_names_list():
+    ''' Return a list of unique collection names'''
+    # Retrieve hiearchy of all collection and their parents
+    cols_tree = col_hierarchy(bpy.context.scene.collection, levels=9)
+    all_cols = {i: k for k, v in cols_tree.items() for i in v}
+
+    # Parse all collections and process the ones matching the pattern
+    names_elements = []
+    for col in all_cols:
+        name_element = re.split('\s+|_', col.name)
+        names_elements.extend(name_element)
+    # return a sorted list of unique names
+    return sorted(list(set(names_elements)), key=lambda i: i[0].lower())
+
 # ------------------------------------------------------------------------
 #    Coordinates, positions, distance, volumes
 # ------------------------------------------------------------------------
-def retrieve_global_coordinates(inObj):
+def get_global_coordinates(inObj):
     '''Retrieve the global coordinates of an object'''
-    v_co_world = inObj.matrix_world @ inObj.data.vertices[0].co
+    if inObj.type == 'MESH':
+        v_co_world = inObj.matrix_world @ inObj.data.vertices[0].co
+    else:
+        v_co_world = inObj.matrix_world.translation
     return v_co_world
 
 
@@ -207,7 +235,7 @@ def translate_to_origin():
         bpy.context.view_layer.objects.active = obj
         if obj.type == 'MESH':
             # Get the coordinates of the object center
-            obj_center = retrieve_global_coordinates(obj)
+            obj_center = get_global_coordinates(obj)
             obj_centers.append(obj_center)
     # Compute the coordinates of the barycenter of all imported objects
     center = np.mean(np.asarray(obj_centers), axis=0)

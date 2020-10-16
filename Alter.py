@@ -9,7 +9,7 @@ from .Utilities import (ObjectNavigator, apply_modifiers)
 # ------------------------------------------------------------------------
 #    Keymaps
 # ------------------------------------------------------------------------
-PT_Edit_keymaps = []
+PT_Alter_keymaps = []
 
 
 # ------------------------------------------------------------------------
@@ -278,9 +278,9 @@ class MORPHOBLEND_OT_Split_finish(bpy.types.Operator):
 # ------------------------------------------------------------------------
 #    UI elements
 # ------------------------------------------------------------------------
-class MORPHOBLEND_PT_Edit(bpy.types.Panel):
-    bl_idname = 'MORPHOBLEND_PT_Edit'
-    bl_label = 'Edit'
+class MORPHOBLEND_PT_Alter(bpy.types.Panel):
+    bl_idname = 'MORPHOBLEND_PT_Alter'
+    bl_label = 'Alter'
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'UI'
     bl_category = 'MorphoBlend'
@@ -339,7 +339,7 @@ MORPHOBLEND_OT_Split_finish,)
 register_classes, unregister_classes = bpy.utils.register_classes_factory(classes)
 
 
-def register_edit():
+def register_alter():
     register_classes()
     # Define  keymaps
     wm = bpy.context.window_manager
@@ -348,42 +348,42 @@ def register_edit():
     if kc:
         km = kc.keymaps.new(name='3D View', space_type='VIEW_3D')
         kmi = km.keymap_items.new(MORPHOBLEND_OT_WorkListAdd.bl_idname, type='A', value='PRESS', ctrl=True, shift=True)
-        PT_Edit_keymaps.append((km, kmi))
+        PT_Alter_keymaps.append((km, kmi))
     # MORPHOBLEND_OT_WorkListRemove --> Ctrl + Shift + R
     if kc:
         km = kc.keymaps.new(name='3D View', space_type='VIEW_3D')
         kmi = km.keymap_items.new(MORPHOBLEND_OT_WorkListRemove.bl_idname, type='R', value='PRESS', ctrl=True, shift=True)
-        PT_Edit_keymaps.append((km, kmi))
+        PT_Alter_keymaps.append((km, kmi))
     # MORPHOBLEND_OT_WorkListNext --> Shift + N
     if kc:
         km = kc.keymaps.new(name='3D View', space_type='VIEW_3D')
         kmi = km.keymap_items.new(MORPHOBLEND_OT_WorkListNext.bl_idname, type='N', value='PRESS', ctrl=False, shift=True)
-        PT_Edit_keymaps.append((km, kmi))
+        PT_Alter_keymaps.append((km, kmi))
     # MORPHOBLEND_OT_WorkListRemove --> Shift + P
     if kc:
         km = kc.keymaps.new(name='3D View', space_type='VIEW_3D')
         kmi = km.keymap_items.new(MORPHOBLEND_OT_WorkListPrevious.bl_idname, type='P', value='PRESS', ctrl=False, shift=True)
-        PT_Edit_keymaps.append((km, kmi))
+        PT_Alter_keymaps.append((km, kmi))
     # MORPHOBLEND_OT_Merge --> Ctrl + Shift + M
     if kc:
         km = kc.keymaps.new(name='3D View', space_type='VIEW_3D')
         kmi = km.keymap_items.new(MORPHOBLEND_OT_Merge.bl_idname, type='M', value='PRESS', ctrl=True, shift=True)
-        PT_Edit_keymaps.append((km, kmi))
+        PT_Alter_keymaps.append((km, kmi))
     # MORPHOBLEND_OT_Split --> Ctrl + Shift + Y
     if kc:
         km = kc.keymaps.new(name='3D View', space_type='VIEW_3D')
         kmi = km.keymap_items.new(MORPHOBLEND_OT_Split.bl_idname, type='Y', value='PRESS', ctrl=True, shift=True)
-        PT_Edit_keymaps.append((km, kmi))
+        PT_Alter_keymaps.append((km, kmi))
     # MORPHOBLEND_OT_Split Finish --> Ctrl + Shift + T
     if kc:
         km = kc.keymaps.new(name='3D View', space_type='VIEW_3D')
         kmi = km.keymap_items.new(MORPHOBLEND_OT_Split_finish.bl_idname, type='P', value='PRESS', ctrl=True, shift=True)
-        PT_Edit_keymaps.append((km, kmi))
+        PT_Alter_keymaps.append((km, kmi))
 
 
-def unregister_edit():
+def unregister_alter():
     # handle the keymap
-    for km, kmi in PT_Edit_keymaps:
+    for km, kmi in PT_Alter_keymaps:
         km.keymap_items.remove(kmi)
-    PT_Edit_keymaps.clear()
+    PT_Alter_keymaps.clear()
     unregister_classes()

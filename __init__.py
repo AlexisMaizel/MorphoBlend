@@ -11,14 +11,20 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
+import importlib
+import os
+import subprocess
+import sys
+
 import bpy
 
-from .Edit import MORPHOBLEND_PT_Edit, register_edit, unregister_edit
+from .Alter import MORPHOBLEND_PT_Alter, register_alter, unregister_alter
 from .Import import MORPHOBLEND_PT_Import, register_import, unregister_import
 from .Process import (MORPHOBLEND_PT_Process, register_process,
                       unregister_process)
 from .Quantify import (MORPHOBLEND_PT_Quantify, register_quantify,
                        unregister_quantify)
+from .Analyze import MORPHOBLEND_PT_Analyze, register_analyze, unregister_analyze
 from .Render import MORPHOBLEND_PT_Render, register_render, unregister_render
 
 bl_info = {
@@ -26,7 +32,7 @@ bl_info = {
     'author': 'Alexis Maizel',
     'description': 'Addon for visualisation, processing and quantification of cell segmentation',
     'blender': (2, 83, 5),
-    'version': (0, 4, 0),
+    'version': (0, 5, 0),
     'location': 'View3D',
     'warning': '',
     'category': 'Generic'
@@ -47,10 +53,67 @@ class VIEW3D_PT_MorphoBlend(bpy.types.Panel):
         scene = context.scene
 
 
+def install_pip():
+    ''' Bootstrap pip and any dependencies into Blender's Python
+    On Blender 2.83 pip should be activated by default and this check is useless'''
+    try:
+        import pip
+    except ImportError:
+        print("pip python package not found. Installing.")
+        try:
+            import ensurepip
+            ensurepip.bootstrap(upgrade=True, default_pip=True)
+            os.environ.pop("PIP_REQ_TRACKER", None)
+        except ImportError:
+            print("pip cannot be configured or installed. ")
+
+
+def install_packages(package_names):
+    ''' Bootstrap libraries dependencies into Blender's Python '''
+    for pkg in package_names:
+        try:
+            importlib.import_module(pkg)
+        except ImportError:
+            print(f"Morphoblend - INFO: '{pkg}' python package not found. Installing... ")
+            install_package(pkg)
+
+
+def uninstall_packages(package_names):
+    ''' Remove packages from Blender's Python '''
+    for pkg in package_names:
+        print(f"Morphoblend - INFO: Removing '{pkg}' python package.")
+        uninstall_package(pkg)
+
+
+def get_package_install_directory():
+    for path in sys.path:
+        if os.path.basename(path) in ("dist-packages", "site-packages"):
+            return path
+
+
+def install_package(name):
+    pybin = bpy.app.binary_path_python
+    target = get_package_install_directory()
+    subprocess.run([pybin, '-m', 'pip', 'install', name, '--target', target])
+
+
+def uninstall_package(name):
+    pybin = bpy.app.binary_path_python
+    subprocess.run([pybin, '-m', 'pip', 'uninstall', name, '-y'])
+
+
+# List of third party packages that need to be installed
+install_packages_list = ['anytree', 'networkx']
+
+# List of third party packages that need to be UNinstalled
+uninstall_packages_list = ['treelib']
+
+
 morphoblend_classes = (VIEW3D_PT_MorphoBlend,
         MORPHOBLEND_PT_Import,
         MORPHOBLEND_PT_Process,
-        MORPHOBLEND_PT_Edit,
+        MORPHOBLEND_PT_Alter,
+        MORPHOBLEND_PT_Analyze,
         MORPHOBLEND_PT_Quantify,
         MORPHOBLEND_PT_Render,
         )
@@ -59,10 +122,13 @@ register_init, unregister_init = bpy.utils.register_classes_factory(morphoblend_
 
 
 def register():
+    # uninstall_packages(uninstall_packages_list)
+    install_packages(install_packages_list)
     register_init()
     register_import()
     register_process()
-    register_edit()
+    register_alter()
+    register_analyze()
     register_quantify()
     register_render()
 
@@ -70,7 +136,8 @@ def register():
 def unregister():
     unregister_render()
     unregister_quantify()
-    unregister_edit()
+    unregister_analyze()
+    unregister_alter()
     unregister_process()
     unregister_import()
     unregister_init()

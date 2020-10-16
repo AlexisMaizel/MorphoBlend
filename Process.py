@@ -7,7 +7,7 @@ from bpy.props import (BoolProperty, EnumProperty,
 from .Quantify import volume_and_area_from_object
 from .Utilities import (apply_modifiers, assign_material, col_hierarchy,
                         create_materials_palette,
-                        move_obj_to_coll)
+                        move_obj_to_coll, unique_colls_names_list)
 
 
 # ------------------------------------------------------------------------
@@ -19,12 +19,20 @@ g_filter_results_name = 'Filter Results'
 # ------------------------------------------------------------------------
 #    Properties
 # ------------------------------------------------------------------------
+def unique_colls_callback(scene, context):
+    items = [('-', '', '')]
+    unique_names = unique_colls_names_list()
+    for name in unique_names:
+        items.append((name, name, ''))
+    return items
+
 class ProcessProperties(bpy.types.PropertyGroup):
 
     chosen_palette: EnumProperty(
         name='Palette',
         description='Palette used to colorize',
-        items=[('Col_1', '[C] Light blue', ''),
+        items=[('Col_0', '[C] Grey', ''),
+                ('Col_1', '[C] Light blue', ''),
                 ('Col_2', '[C] Blue', ''),
                 ('Col_3', '[C] Light green', ''),
                 ('Col_4', '[C] Green', ''),
@@ -69,15 +77,19 @@ class ProcessProperties(bpy.types.PropertyGroup):
         default='',
         subtype='NONE'
     )
-    color_in_coll_pattern: StringProperty(
-        name='Pattern',
-        description='Regex pattern to select colllections',
-        default='',
-        subtype='NONE'
+    color_in_coll_selection: EnumProperty(
+        name='Collections',
+        description='Uniques collections',
+        items=unique_colls_callback
     )
     bool_vol_all: BoolProperty(
         name='Apply filter to all',
         description='Apply the filter to all cells, even the non selected / visible ones',
+        default=False
+    )
+    bool_rename_all: BoolProperty(
+        name='Rename all',
+        description='Rename all cells, even the non selected / visible ones',
         default=False
     )
     vol_min_max: IntVectorProperty(
@@ -128,9 +140,8 @@ class MORPHOBLEND_OT_ColorizeInColl(bpy.types.Operator):
     def execute(self, context):
         max_levels = 9                          # Max Levels to parse
         scn_col = bpy.context.scene.collection  # Root collection
-        scene = context.scene
-        process_op = scene.process_tool
-        _pattern = process_op.color_in_coll_pattern
+        process_op = context.scene.process_tool
+        _pattern = process_op.color_in_coll_selection
         # Create Palette  if needed
         mat_palette = create_materials_palette(process_op.chosen_palette)
 
@@ -147,7 +158,7 @@ class MORPHOBLEND_OT_ColorizeInColl(bpy.types.Operator):
                 for obj in col.all_objects:
                     bpy.context.view_layer.objects.active = obj
                     if obj.type == 'MESH':
-                        assign_material(obj, mat_palette, rand_color=False)
+                        assign_material(obj, mat_palette, rand_color=True)
                         n_obj += 1
         info_mess = f"{str(n_obj)} cells in {str(n_coll)} collections modified!"
         self.report({'INFO'}, info_mess)
@@ -264,18 +275,37 @@ class MORPHOBLEND_OT_Rename(bpy.types.Operator):
 
     @classmethod
     def poll(cls, context):
-        return context.selected_objects is not None
+        scene = context.scene
+        process_op = scene.process_tool
+        if process_op.bool_rename_all:
+            return True
+        else:
+            return context.selected_objects is not None
 
     def execute(self, context):
         scene = context.scene
         process_op = scene.process_tool
         _search_pattern = process_op.search_pattern
         _replace_pattern = process_op.replace_pattern
-        for obj in bpy.context.selected_objects:
-            bpy.context.view_layer.objects.active = obj
-            if obj.type == 'MESH':
-                obj.name = re.sub(_search_pattern, _replace_pattern, obj.name)
-        info_mess = f"{str(len(bpy.context.selected_objects))} cells renamed!"
+        _apply_to_all = process_op.bool_rename_all
+
+        k = 0
+        if _apply_to_all:
+            # Parse all objects of the scene
+            for obj in bpy.context.scene.objects:
+                if obj.type == 'MESH':
+                    if re.search(_search_pattern, obj.name) is not None:
+                        obj.name = re.sub(_search_pattern, _replace_pattern, obj.name)
+                        k += 1
+        else:
+            # Parse selection
+            for obj in bpy.context.selected_objects:
+                bpy.context.view_layer.objects.active = obj
+                if obj.type == 'MESH':
+                    if re.search(_search_pattern, obj.name) is not None:
+                        obj.name = re.sub(_search_pattern, _replace_pattern, obj.name)
+                        k += 1
+        info_mess = f"{k} cells renamed!"
         self.report({'INFO'}, info_mess)
         return {'FINISHED'}
 
@@ -336,26 +366,21 @@ class MORPHOBLEND_PT_Process(bpy.types.Panel):
         row = box.row()
         row.label(text='Palette [P] or Color [C]:')
         row.prop(process_op, 'chosen_palette', text='')
-        row.operator(MORPHOBLEND_OT_Colorize.bl_idname, text='Colorize')
-
-        box = layout.box()
         row = box.row()
-        row.label(text='Bulk color cells in collection', icon='COLORSET_08_VEC')
+        row.label(text="Apply to selected cells only:")
+        row.operator(MORPHOBLEND_OT_Colorize.bl_idname, text='Color')
 
         row = box.row()
-        row.label(text='Palette [P] or Color [C]:')
-        row.prop(process_op, 'chosen_palette', text='')
-        row = box.row()
-        row.prop(process_op, 'color_in_coll_pattern')
-        row.operator(MORPHOBLEND_OT_ColorizeInColl.bl_idname, text='Colorize')
+        row.prop(process_op, 'color_in_coll_selection')
+        row.operator(MORPHOBLEND_OT_ColorizeInColl.bl_idname, text='Color all')
 
-        box = layout.box()
+        '''box = layout.box()
         row = box.row()
         if len(bpy.context.selected_objects) > 1:
             text_box = f"Finalize Modifiers [{str(len(bpy.context.selected_objects))} selected cells]"
         else:
             text_box = f"Finalize Modifiers [{str(len(bpy.context.selected_objects))} selected cell]"
-        row.label(text=text_box, icon='MODIFIER_ON')
+        row.label(text=text_box, icon='MODIFIER_ON')'''
 
         row = box.row()
         row.operator(MORPHOBLEND_OT_FinalizeModifiers.bl_idname, text='Finalize')
@@ -372,6 +397,7 @@ class MORPHOBLEND_PT_Process(bpy.types.Panel):
         row.prop(process_op, 'search_pattern')
         row.prop(process_op, 'replace_pattern')
         row = box.row()
+        row.prop(process_op, 'bool_rename_all')
         row.operator(MORPHOBLEND_OT_Rename.bl_idname, text='Rename')
 
         box = layout.box()
