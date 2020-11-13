@@ -24,6 +24,12 @@
 
 ## Release notes
 
+##### v0.5.1 | Basic export  and misc. improvements [2020-10-XX]
+
+- Basic export of each cell as `PLY` 
+- Improved performances of headless importer
+- Improved performances of Filtering based on volume: implemented caching to speed up repeated filtering.
+
 ##### v0.5.0 | Cell tracking and 3D connectivity graph [2020-10-16]
 
 - Basic tracking of cells over time to establish lineages
@@ -205,7 +211,6 @@ This modules handles the selection, colouring, sorting and filtering of the cell
 
 You can also color all cells in collection(s) matching the term on the pull down menu. Then press `Color all`  are assigned a specific color or colored randomely from the chosen palette.
 
-
 **Rename:** will rename all selected objects. `regex`-style expression can be used in the search and replace fields. `Replace all` will do this for all cells, also the hidden ones.
 
 **Group into collection:** will move all objects which name fit the `regex`-style expression, to a collection of the same name.
@@ -291,13 +296,14 @@ The tracking data can  be exported / imported:
 - press `Import` or `Export`
 
 **3D connectivity graph:** This will generate the graph of cell connectivity: adjacent cells are nodes linked by an edge.
+Note: the area of contact between two cells is stored as an  edge attribute.
 
 - Ticking `Extract for all cells` will generate the graph of cell connectivity for  every single cells, not just the selected ones.
 - Press `Generate` to start the process. (!) **Beware** this can be long!
 - Once  tracking data exist, pressing `Draw` to visualise the resulting graph
 - To erase the track data, click `Clear`.
 
-The connectivity data can  be exported / imported:
+The connectivity data can  be exported / imported in `JSON`:
 
 - select the path
 - press `Import` or `Export`
@@ -325,8 +331,6 @@ The output file will contain in addition to the name of the cell and the collect
 This modules contains tools to arrange and visualise cells and tissues.
 
 ![The Render Module](Images/Render.png)
-
-
 
 **Show/hide collections:** This will set the visibility of *any collection* which names matches the string in **'Search'**(regex accepted!). Press **'Set'** to execute. This is very useful to toggle th visibility of tissues accross all time points.
 

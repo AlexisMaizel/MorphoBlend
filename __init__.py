@@ -26,13 +26,14 @@ from .Quantify import (MORPHOBLEND_PT_Quantify, register_quantify,
                        unregister_quantify)
 from .Analyze import MORPHOBLEND_PT_Analyze, register_analyze, unregister_analyze
 from .Render import MORPHOBLEND_PT_Render, register_render, unregister_render
+from .Export import MORPHOBLEND_PT_Export, register_export, unregister_export
 
 bl_info = {
     'name': 'MorphoBlend',
     'author': 'Alexis Maizel',
     'description': 'Addon for visualisation, processing and quantification of cell segmentation',
     'blender': (2, 83, 5),
-    'version': (0, 5, 0),
+    'version': (0, 5, 1),
     'location': 'View3D',
     'warning': '',
     'category': 'Generic'
@@ -116,6 +117,7 @@ morphoblend_classes = (VIEW3D_PT_MorphoBlend,
         MORPHOBLEND_PT_Analyze,
         MORPHOBLEND_PT_Quantify,
         MORPHOBLEND_PT_Render,
+        MORPHOBLEND_PT_Export,
         )
 
 register_init, unregister_init = bpy.utils.register_classes_factory(morphoblend_classes)
@@ -131,9 +133,11 @@ def register():
     register_analyze()
     register_quantify()
     register_render()
+    register_export()
 
 
 def unregister():
+    unregister_export()
     unregister_render()
     unregister_quantify()
     unregister_analyze()

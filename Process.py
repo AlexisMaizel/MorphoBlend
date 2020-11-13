@@ -7,7 +7,7 @@ from bpy.props import (BoolProperty, EnumProperty,
 from .Quantify import volume_and_area_from_object
 from .Utilities import (apply_modifiers, assign_material, col_hierarchy,
                         create_materials_palette,
-                        move_obj_to_coll, unique_colls_names_list)
+                        move_obj_to_subcoll, unique_colls_names_list)
 
 
 # ------------------------------------------------------------------------
@@ -182,8 +182,7 @@ class MORPHOBLEND_OT_SelectOnVolume(bpy.types.Operator):
 
     def execute(self, context):
         filter_coll_name = g_filter_results_name
-        scene = context.scene
-        process_op = scene.process_tool
+        process_op = context.scene.process_tool
         _apply_to_all = process_op.bool_vol_all
         (_min_vol, _max_vol) = process_op.vol_min_max
         # Create the  FILTERED collection if it does not exist, empty it if it exists
@@ -327,7 +326,7 @@ class MORPHOBLEND_OT_Arrange(bpy.types.Operator):
         for obj in bpy.context.selected_objects:
             bpy.context.view_layer.objects.active = obj
             if obj.type == 'MESH' and re.search(_pattern, obj.name):
-                move_obj_to_coll(obj, 'Sorted')
+                move_obj_to_subcoll(obj, 'Sorted')
         info_mess = f"{str(len(bpy.context.selected_objects))} cells sorted!"
         self.report({'INFO'}, info_mess)
         return {'FINISHED'}

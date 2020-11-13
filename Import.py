@@ -2,7 +2,6 @@ import re
 from math import radians
 from pathlib import Path
 
-# import numpy as np
 import bpy
 from bpy.props import (BoolProperty, EnumProperty, FloatProperty,
                        FloatVectorProperty, IntProperty, IntVectorProperty,
@@ -142,8 +141,7 @@ class MORPHOBLEND_OT_Import(bpy.types.Operator):
 
     @classmethod
     def poll(cls, context):
-        scene = context.scene
-        import_prop = scene.import_prop
+        import_prop = context.scene.import_prop
         return import_prop.import_path != ''
 
     def number_of_file_to_import(self, inPath):
@@ -251,8 +249,7 @@ class MORPHOBLEND_OT_Import(bpy.types.Operator):
         bpy.context.scene.unit_settings.scale_length = g_scaling_units_scene
 
     def execute(self, context):
-        scene = context.scene
-        import_prop = scene.import_prop
+        import_prop = context.scene.import_prop
         output_basename = 'Output'
         # WARN This implements a progress bar but in a hacky way. Forced to call bpy.ops.wm.redraw_timer(type='DRAW_WIN_SWAP', iterations=1)
         # should find a way to use a modal operator for it. Issue: where to put the main call, in invoke() or in modal()?
@@ -377,7 +374,7 @@ class MORPHOBLEND_PT_Import(bpy.types.Panel):
         layout.row().separator()
         row = layout.row()
         # TODO  I wonder if I need all this mess below --> clean?
-        op = row.operator(MORPHOBLEND_OT_Import.bl_idname, text='Import')
+        op = row.operator(MORPHOBLEND_OT_Import.bl_idname, text='Import', icon='IMPORT')
         op.import_path = import_prop.import_path
         op.magnification = import_prop.magnification
         op.rot_xyz = import_prop.rot_xyz

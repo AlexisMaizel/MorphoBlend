@@ -13,6 +13,13 @@ from gpu_extras.batch import batch_for_shader
 from mathutils import Matrix, Vector
 from itertools import tee, islice, chain
 
+# ------------------------------------------------------------------------
+#    global variables
+# ------------------------------------------------------------------------
+
+# Cache for the volume and area measurements
+g_cache_vol_area = {}
+
 
 # ------------------------------------------------------------------------
 #    Color & materials
@@ -133,6 +140,68 @@ def get_collection(obj):
     return bpy.context.scene.collection
 
 
+def show_active_tp(context):
+    '''Get the last active time point collection and make it the only one visible in viewport'''
+    analyze_op = context.scene.analyze_tool
+    all_tp_cols = collections_from_pattern(analyze_op.tp_pattern)
+    current_col = context.collection
+    if re.match(analyze_op.tp_pattern, current_col.name):
+        currentTPcoll = current_col
+    else:
+        currentTPcoll = all_tp_cols[-1]
+    # Only the current TP is visible on screen
+    for col in all_tp_cols:
+        if col == currentTPcoll:
+            col.hide_viewport = False
+        else:
+            col.hide_viewport = True
+    return currentTPcoll
+
+
+def collection_navigator(inCollList, inCurrentColl, direction):
+    '''Returns the next/previous time point collection  relative to the one passed in, return FALSE if error'''
+    # Get index of the timepoint in the hierarchy
+    tpcol_index = inCollList.index(inCurrentColl)
+    if direction == 'next':
+        dir = +1
+    elif direction == 'previous':
+        dir = -1
+    else:
+        return False
+    # Return the next/previous object if  within bounds, or the last/first
+    if 0 <= tpcol_index + dir < len(inCollList):
+        return inCollList[tpcol_index + dir]
+    elif tpcol_index + dir > len(inCollList) - 1:
+        return inCollList[0]
+    else:
+        return inCollList[len(inCollList) - 1]
+
+
+def hide_display(currentTPcoll, next_tp):
+    ''' Hide current collection, display the next one'''
+    currentTPcoll.hide_viewport = True
+    next_tp.hide_viewport = False
+    layer_collection = bpy.context.view_layer.layer_collection.children[next_tp.name]
+    bpy.context.view_layer.active_layer_collection = layer_collection
+    info_mess = 'Visible: ' + next_tp.name
+    return info_mess
+
+
+def collections_from_pattern(in_pattern):
+    ''' Returns a sorted list of all collections which name matches a pattern'''
+    # list of all collections at 1st level
+    scn_col = bpy.context.scene.collection  # Root collection
+    root_cols = col_hierarchy(scn_col, levels=1)
+    all_cols = [k for k in root_cols.values()][0]
+    # Only keep collections that are time points
+    all_tp_cols = {}
+    for col in all_cols:
+        if re.match(in_pattern, col.name) is not None:
+            all_tp_cols[col.name] = col
+    sorted_all_tp_cols = dict(sorted(all_tp_cols.items(), key=lambda i: i[0].lower()))
+    return list(sorted_all_tp_cols.values())
+
+
 def make_collection(collection_name, parent_collection):
     '''Create a collection if it does not already exist, attach it to the parent.
     Attach to the top most collection if no parent provided'''
@@ -149,7 +218,7 @@ def make_collection(collection_name, parent_collection):
         return new_collection
 
 
-def move_obj_to_coll(obj, destColl):
+def move_obj_to_subcoll(obj, destColl):
     ''' Moves an object to a sub-collection, child of the original one, creating the collection if it does not exist.'''
     if destColl is None:
         return
@@ -158,6 +227,13 @@ def move_obj_to_coll(obj, destColl):
         new_coll = make_collection(destColl, orig_coll)
         new_coll.objects.link(obj)
         orig_coll.objects.unlink(obj)
+
+
+def move_obj_to_coll(obj, destColl):
+    ''' Moves an object to a specific collection.'''
+    orig_coll = get_collection(bpy.data.objects[obj.name])
+    destColl.objects.link(obj)
+    orig_coll.objects.unlink(obj)
 
 
 def ObjectNavigator(inCollection, inObj, direction):
@@ -209,6 +285,7 @@ def unique_colls_names_list():
         names_elements.extend(name_element)
     # return a sorted list of unique names
     return sorted(list(set(names_elements)), key=lambda i: i[0].lower())
+
 
 # ------------------------------------------------------------------------
 #    Coordinates, positions, distance, volumes
@@ -265,14 +342,21 @@ def distance2D(ref=(0, 0, 0), point=(0, 0, 0), plane_def=(True, False, True)):
 
 def volume_and_area_from_object(inObj):
     ''' Return the scaled volume & area for an object'''
-    bm = bmesh.new()   # create an empty BMesh
-    bm = bmesh_copy_from_object(inObj, apply_modifiers=True)
-    volume = bm.calc_volume()
-    area = sum(f.calc_area() for f in bm.faces)
-    bm.free()
-    scaled_volume = volume * bpy.context.scene.unit_settings.scale_length ** 3
-    scaled_area = area * bpy.context.scene.unit_settings.scale_length ** 2
-    return abs(scaled_volume), abs(scaled_area)
+    # If object is in the cache, retrieve the values
+    global g_cache_vol_area
+    if inObj in g_cache_vol_area.keys():
+        return g_cache_vol_area[inObj][0], g_cache_vol_area[inObj][1]
+    else:  # Not in tehe cache, compute.
+        bm = bmesh.new()   # create an empty BMesh
+        bm = bmesh_copy_from_object(inObj, apply_modifiers=True)
+        volume = bm.calc_volume()
+        area = sum(f.calc_area() for f in bm.faces)
+        bm.free()
+        scaled_volume = volume * bpy.context.scene.unit_settings.scale_length ** 3
+        scaled_area = area * bpy.context.scene.unit_settings.scale_length ** 2
+        # Cache the results
+        g_cache_vol_area[inObj] = (abs(scaled_volume), abs(scaled_area))
+        return abs(scaled_volume), abs(scaled_area)
 
 
 # ------------------------------------------------------------------------

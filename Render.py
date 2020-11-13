@@ -1,9 +1,19 @@
 import re
 
 import bpy
-from bpy.props import BoolProperty, PointerProperty, StringProperty, EnumProperty
+from bpy.props import BoolProperty, PointerProperty, EnumProperty
 
-from .Utilities import col_hierarchy, unique_colls_names_list
+from .Utilities import (unique_colls_names_list,
+                        col_hierarchy,
+                        collections_from_pattern,
+                        show_active_tp,
+                        collection_navigator,
+                        hide_display)
+
+# ------------------------------------------------------------------------
+#    Keymaps
+# ------------------------------------------------------------------------
+PT_Analyze_keymaps = []
 
 
 # ------------------------------------------------------------------------
@@ -37,6 +47,60 @@ class RenderProperties(bpy.types.PropertyGroup):
 # ------------------------------------------------------------------------
 #    Operators
 # ------------------------------------------------------------------------
+class MORPHOBLEND_OT_NextTimePoint(bpy.types.Operator):
+    '''Make next time points collections visible.'''
+    bl_idname = 'morphoblend.next_timepoint'
+    bl_label = 'Next time points'
+    bl_descripton = 'Make next time points collections visible.'
+    bl_options = {'REGISTER', 'INTERNAL'}
+
+    @classmethod
+    def poll(cls, context):
+        return True
+
+    def execute(self, context):
+        analyze_op = context.scene.analyze_tool
+        # Get all TP collections at the topmost level
+        all_tp_cols = collections_from_pattern(analyze_op.tp_pattern)
+        # Retrieve the currently active TP collection and make it the only visible
+        currentTPcoll = show_active_tp(context)
+        # Get the next time point and display it
+        next_tp = collection_navigator(all_tp_cols, currentTPcoll, "next")
+        if next_tp is not False:
+            info_mess = hide_display(currentTPcoll, next_tp)
+            self.report({'INFO'}, info_mess)
+        else:
+            self.report({'WARNING'}, "Problem")
+        return{'FINISHED'}
+
+
+class MORPHOBLEND_OT_PreviousTimePoint(bpy.types.Operator):
+    '''Make previous time points collections visible. '''
+    bl_idname = 'morphoblend.previous_timepoint'
+    bl_label = 'Previous time points'
+    bl_descripton = 'Make previous time points collections visible.'
+    bl_options = {'REGISTER', 'INTERNAL'}
+
+    @classmethod
+    def poll(cls, context):
+        return True
+
+    def execute(self, context):
+        analyze_op = context.scene.analyze_tool
+        # Get all TP collections at the topmost level
+        all_tp_cols = collections_from_pattern(analyze_op.tp_pattern)
+        # Retrieve the currently active TP collection and make it the only visible
+        currentTPcoll = show_active_tp(context)
+        # Get the previous time point and display it
+        next_tp = collection_navigator(all_tp_cols, currentTPcoll, "previous")
+        if next_tp is not False:
+            info_mess = hide_display(currentTPcoll, next_tp)
+            self.report({'INFO'}, info_mess)
+        else:
+            self.report({'WARNING'}, "Problem")
+        return{'FINISHED'}
+
+
 class MORPHOBLEND_OT_ChangeVisibilityCollection(bpy.types.Operator):
     '''Set visibility of collections based on name pattern matching.'''
     bl_idname = 'morphoblend.toggle_visibility_collections'
@@ -105,7 +169,9 @@ class MORPHOBLEND_PT_Render(bpy.types.Panel):
 #    Registrer/unregister calls
 # ------------------------------------------------------------------------
 classes = (RenderProperties,
-MORPHOBLEND_OT_ChangeVisibilityCollection)
+MORPHOBLEND_OT_ChangeVisibilityCollection,
+MORPHOBLEND_OT_NextTimePoint,
+MORPHOBLEND_OT_PreviousTimePoint)
 
 register_classes, unregister_classes = bpy.utils.register_classes_factory(classes)
 
@@ -113,8 +179,25 @@ register_classes, unregister_classes = bpy.utils.register_classes_factory(classe
 def register_render():
     register_classes()
     bpy.types.Scene.render_tool = PointerProperty(type=RenderProperties)
+    # Define  keymaps
+    wm = bpy.context.window_manager
+    kc = wm.keyconfigs.addon
+    if kc:
+        # MORPHOBLEND_OT_NextTimePoint --> Ctrl + Shift + down_arrow
+        km = kc.keymaps.new(name='3D View', space_type='VIEW_3D')
+        kmi = km.keymap_items.new(MORPHOBLEND_OT_NextTimePoint.bl_idname, type='DOWN_ARROW', value='PRESS', ctrl=True, shift=True)
+        PT_Analyze_keymaps.append((km, kmi))
+    if kc:
+        # MORPHOBLEND_OT_PreviousTimePoint --> Ctrl + Shift + up_arrow
+        km = kc.keymaps.new(name='3D View', space_type='VIEW_3D')
+        kmi = km.keymap_items.new(MORPHOBLEND_OT_PreviousTimePoint.bl_idname, type='UP_ARROW', value='PRESS', ctrl=True, shift=True)
+        PT_Analyze_keymaps.append((km, kmi))
 
 
 def unregister_render():
+    # handle the keymap
+    for km, kmi in PT_Analyze_keymaps:
+        km.keymap_items.remove(kmi)
+    PT_Analyze_keymaps.clear()
     del bpy.types.Scene.render_tool
     unregister_classes()

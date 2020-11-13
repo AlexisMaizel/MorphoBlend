@@ -1,6 +1,7 @@
 import argparse
 import logging
 import re
+import os
 from math import radians
 from pathlib import Path
 from random import randrange
@@ -12,6 +13,8 @@ from mathutils import Matrix, Vector
 
 
 g_tp_pattern = '^[Tt]\d{2,}'
+g_import_coll_name = 'Imported'
+g_max_obj = 10
 
 
 def args_parser():
@@ -36,17 +39,14 @@ def main():
     # Configure logging
     log_path = Path(bpy.path.abspath(args.path), output_basename).with_suffix('.log')
     logging.basicConfig(level=logging.INFO, filename=log_path, filemode='w', format='%(asctime)s - %(message)s')
-    # Remove everything from the project
-    for o in bpy.context.scene.objects:
-        o.select_set(True)
-    bpy.ops.object.delete()
+    # Remove everything from the project and initialise scene
+    cleanup()
     initialise('Qual_bright', args.voxel, args.rotation)
-    global g_random_color, g_apply_mod, n_files_imported, num_files_to_import
-    g_random_color = True
-    g_apply_mod = True
+    # Get total number of files to process
     num_files_to_import = number_of_file_to_import(bpy.path.abspath(args.path))
-    n_files_imported = 0
-    outfile_path = Path(bpy.path.abspath(args.path), output_basename).with_suffix('.blend')
+    (i, j) = (0, 0)  # Running counters for object imported
+    # List of intermediary saved files
+    saved_files = []
     logging.info('Starting. Will import a total of %s files', num_files_to_import)
     # Main loop: Parsing the content of the input path
     for child in sorted(Path(bpy.path.abspath(args.path)).iterdir()):
@@ -60,20 +60,75 @@ def main():
                 tp_coll = bpy.data.collections[child.name]
             logging.info('Processing: %s', tp_coll.name)
             # Process all PLY files in the folder
-            k = 0
             for ply_file in sorted(child.glob('*.ply')):
                 import_process_sort(inFilePath=ply_file.as_posix(), inColl=tp_coll)
-                k += 1
-            # save project when import of a time point is done
-            logging.info('Imported %s files and saved after: %s', k, tp_coll.name)
+                j += 1
+                i += 1
+            logging.info('Imported %s files, saved %s (cumulated: %s objects)', j, tp_coll.name, i)
+            outfile_path = Path(bpy.path.abspath(args.path), output_basename + '_' + tp_coll.name).with_suffix('.blend')
             bpy.ops.wm.save_as_mainfile(filepath=outfile_path.as_posix())
-        elif (child.is_file() and child.name.endswith('.ply')):
+            saved_files.append(outfile_path.as_posix())
+            # Cleanup the scene
+            cleanup()
+            j = 0
+        # TODO  Handle case where files are not in tXX folders
+        '''elif (child.is_file() and child.name.endswith('.ply')):
             # Create a Imported collection unless it exists
             imp_coll = bpy.data.collections[g_import_coll_name]
             import_process_sort(inFilePath=child.as_posix(), inColl=imp_coll)
-            logging.info('Progress: %s / %s', n_files_imported, num_files_to_import)
+            k += 1
+            # save project when import of a time point is done and the max number of object is exceeded
+            if k >= g_max_obj:
+                logging.info('Imported %s files and saved after: %s', k, tp_coll.name)
+                outfile_path = Path(bpy.path.abspath(args.path), output_basename + tp_coll.name).with_suffix('.blend')
+                bpy.ops.wm.save_as_mainfile(filepath=outfile_path.as_posix())
+                # Reset the counter
+                k = 0
+                # Cleanup the scene
+                cleanup()
+            outfile_path = Path(bpy.path.abspath(args.path), output_basename).with_suffix('.blend')
+            '''
+    outfile_path = Path(bpy.path.abspath(args.path), output_basename + '_final').with_suffix('.blend')
+    bpy.ops.wm.save_as_mainfile(filepath=outfile_path.as_posix())
+    cleanup()
+    # Import the data from the intermediary files
+    merge_data(saved_files)
+    # Save the Final file
+    outfile_path = Path(bpy.path.abspath(args.path), output_basename + '_final').with_suffix('.blend')
     bpy.ops.wm.save_as_mainfile(filepath=outfile_path.as_posix())
     logging.info('Finished!')
+
+
+def cleanup():
+    for c in bpy.context.scene.collection.children:
+        if c.name != g_import_coll_name:
+            coll = bpy.data.collections.get(c.name)
+            if coll:
+                obs = [o for o in coll.objects if o.users == 1]
+                while obs:
+                    bpy.data.objects.remove(obs.pop())
+                bpy.data.collections.remove(coll)
+
+
+def merge_data(list_files):
+    j = 0
+    for f in list_files:
+        logging.info('Merging data from %s', f)
+        with bpy.data.libraries.load(f) as (data_from, data_to):
+            data_to.collections = [c for c in data_from.collections if c != g_import_coll_name]
+        # link collection to scene collection
+        for coll in data_to.collections:
+            if coll is not None:
+                bpy.context.scene.collection.children.link(coll)
+        k = 0
+        for ob in bpy.data.objects:
+            if ob.type == 'MESH':
+                k += 1
+        i = k - j
+        j = k
+        logging.info('Added %s objects', i)
+        os.remove(f)
+        logging.info('Erased %s', f)
 
 
 def initialise(in_mat_palette, in_voxel_xyz, in_rot_val_xyz):
@@ -84,7 +139,6 @@ def initialise(in_mat_palette, in_voxel_xyz, in_rot_val_xyz):
     # Create materials palette
     g_mat_palette = create_materials_palette(in_mat_palette)
     # MAke sure that the collection 'Imported' exists and is selected that Collection as active one
-    g_import_coll_name = 'Imported'
     if g_import_coll_name not in bpy.data.collections:
         imp_coll = bpy.data.collections.new(name=g_import_coll_name)
         bpy.context.scene.collection.children.link(imp_coll)
@@ -126,10 +180,9 @@ def smooth_color(inObj):
     remesh.mode = 'SMOOTH'
     decim = inObj.modifiers.new(name='Decimate', type='DECIMATE')
     decim.ratio = 0.5
-    if g_apply_mod:
-        inObj = apply_modifiers(inObj)
+    inObj = apply_modifiers(inObj)
     # Add a color at random from the palette
-    assign_color(inObj, g_mat_palette, rand_color=g_random_color)
+    assign_color(inObj, g_mat_palette, rand_color=True)
     return inObj
 
 
@@ -155,8 +208,6 @@ def scale_rotate(inObj, inAngles, inScaling):
 def import_process_sort(inColl=None, inFilePath=''):
     # TODO Replace this by a low level function? hopefully faster!
     bpy.ops.import_mesh.ply(filepath=inFilePath)
-    global n_files_imported
-    n_files_imported += 1
     # Scale, move, smooth and colorize
     obj = bpy.context.active_object
     obj = scale_rotate(obj, inAngles=(radians(g_rot_val_x), radians(g_rot_val_y), radians(g_rot_val_z)), inScaling=(g_scaling_x, g_scaling_y, g_scaling_z))
