@@ -61,7 +61,7 @@ class ImportProperties(bpy.types.PropertyGroup):
     vox_dim: FloatVectorProperty(
         name='',
         description='Voxel size (µm)',
-        default=(0.1625, 0.1625, 0.2500),
+        default=(0.1625, 0.1625, 0.1625),
         min=0.0,
         max=5,
         precision=4,
@@ -238,14 +238,16 @@ class MORPHOBLEND_OT_Import(bpy.types.Operator):
         # Units & scaling
         voxel_x = in_voxel_xyz[0]
         voxel_z = in_voxel_xyz[2]
-        g_scaling_x = g_scaling_y = 0.01
-        g_scaling_z = 0.01 * voxel_z / voxel_x
+        # FIXME ?? the scaling must factor in the rotation applied!! This must be changed in the main Morphoblend too!!!!
+        g_scaling_x = 0.01   #* voxel_z / voxel_x
+        g_scaling_y = 0.01   #* voxel_z / voxel_x
+        g_scaling_z = 0.01 #* voxel_z / voxel_x
         # Set the Blender File unit setting to correct set of units
         # Although Blender accepts 'MICROMETERS', it can not accept 1e-5 as multiplicative factor (1e-5)
-        # Solution: keep in meter and set .scale_length to 10
+        # Solution: keep in meter and set .scale_length to 100
         # all measurements will be returned in meters but should be understood as µm.
         bpy.context.scene.unit_settings.length_unit = 'METERS'
-        g_scaling_units_scene = voxel_x / g_scaling_x
+        g_scaling_units_scene = 100 #voxel_x / g_scaling_x
         bpy.context.scene.unit_settings.scale_length = g_scaling_units_scene
 
     def execute(self, context):
@@ -255,6 +257,7 @@ class MORPHOBLEND_OT_Import(bpy.types.Operator):
         # should find a way to use a modal operator for it. Issue: where to put the main call, in invoke() or in modal()?
         # see https://docs.blender.org/api/current/info_gotcha.html
         # TODO  Refactor & document!
+        # FIXME Importing folder full of files does not update progress bar 
         self.initialise(import_prop.chosen_palette, import_prop.vox_dim, import_prop.rot_xyz)
         import_prop.progress_bar = 0
         global g_random_color, g_apply_mod, n_files_imported, num_files_to_import

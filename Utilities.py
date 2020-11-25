@@ -346,7 +346,7 @@ def volume_and_area_from_object(inObj):
     global g_cache_vol_area
     if inObj in g_cache_vol_area.keys():
         return g_cache_vol_area[inObj][0], g_cache_vol_area[inObj][1]
-    else:  # Not in tehe cache, compute.
+    else:  # Not in the cache, compute.
         bm = bmesh.new()   # create an empty BMesh
         bm = bmesh_copy_from_object(inObj, apply_modifiers=True)
         volume = bm.calc_volume()

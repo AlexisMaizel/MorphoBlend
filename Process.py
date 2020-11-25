@@ -1,4 +1,5 @@
 import re
+import csv
 
 import bpy
 from bpy.props import (BoolProperty, EnumProperty,
@@ -7,7 +8,7 @@ from bpy.props import (BoolProperty, EnumProperty,
 from .Quantify import volume_and_area_from_object
 from .Utilities import (apply_modifiers, assign_material, col_hierarchy,
                         create_materials_palette,
-                        move_obj_to_subcoll, unique_colls_names_list)
+                        move_obj_to_subcoll, unique_colls_names_list, make_collection)
 
 
 # ------------------------------------------------------------------------
@@ -25,6 +26,7 @@ def unique_colls_callback(scene, context):
     for name in unique_names:
         items.append((name, name, ''))
     return items
+
 
 class ProcessProperties(bpy.types.PropertyGroup):
 
@@ -100,7 +102,12 @@ class ProcessProperties(bpy.types.PropertyGroup):
         min=0,
         subtype='NONE'
     )
-
+    batch_path: StringProperty(
+        name='Path',
+        description='Path to file to use',
+        default='',
+        subtype='FILE_PATH'
+    )
 
 # ------------------------------------------------------------------------
 #    Operators
@@ -310,7 +317,7 @@ class MORPHOBLEND_OT_Rename(bpy.types.Operator):
 
 
 class MORPHOBLEND_OT_Arrange(bpy.types.Operator):
-    '''Moves files with name matching pattern to a subcollection.'''
+    '''Moves objects with name matching pattern to a subcollection.'''
     bl_idname = 'morphoblend.arrange'
     bl_label = 'Sort'
     bl_descripton = 'Moves files with name matching pattern to a subcollection.'
@@ -329,6 +336,39 @@ class MORPHOBLEND_OT_Arrange(bpy.types.Operator):
                 move_obj_to_subcoll(obj, 'Sorted')
         info_mess = f"{str(len(bpy.context.selected_objects))} cells sorted!"
         self.report({'INFO'}, info_mess)
+        return {'FINISHED'}
+
+
+class MORPHOBLEND_OT_BatchArrange(bpy.types.Operator):
+    ''' Batch moves cells to collection form file'''
+    bl_idname = 'morphoblend.batch_arrange'
+    bl_label = 'Sort'
+    bl_descripton = 'Batch moves cells to collection form file.'
+
+    @classmethod
+    def poll(cls, context):
+        process_op = context.scene.process_tool
+        return process_op.batch_path != ''
+
+    def execute(self, context):
+        scene = context.scene
+        process_op = scene.process_tool
+        _target = 'LRP'
+        _labels_to_process = {}
+        with open(bpy.path.abspath(process_op.batch_path), 'r+', encoding='utf-8') as f:
+            reader = csv.reader(f, delimiter='\t')
+            next(reader, None)
+            for line in reader:
+                _labels_to_process[line[0]] = line[1].split(' ')
+
+        for k, v in _labels_to_process.items():
+            tp_col_name = f't{k}' # TODO   make this more versatile
+            if tp_col_name in bpy.data.collections:
+               for label in v:
+                    for obj in bpy.data.collections[tp_col_name].objects:
+                        if obj.type == 'MESH' and re.search(rf'.*[tT]{v}.*label{label}', obj.name):
+                            move_obj_to_subcoll(obj,  _target)
+        self.report({'INFO'}, 'Finished')
         return {'FINISHED'}
 
 
@@ -398,7 +438,7 @@ class MORPHOBLEND_PT_Process(bpy.types.Panel):
         row.prop(process_op, 'replace_pattern')
         row = box.row()
         row.prop(process_op, 'bool_rename_all')
-        row.operator(MORPHOBLEND_OT_Rename.bl_idname, text='Rename')
+        row.operator(MORPHOBLEND_OT_Rename.bl_idname, text='Rename', icon='OUTLINER_DATA_GP_LAYER')
 
         box = layout.box()
         row = box.row()
@@ -410,8 +450,10 @@ class MORPHOBLEND_PT_Process(bpy.types.Panel):
 
         row = box.row()
         row.prop(process_op, 'sort_pattern')
+        row.operator(MORPHOBLEND_OT_Arrange.bl_idname, text='Sort', icon='GRAPH')
         row = box.row()
-        row.operator(MORPHOBLEND_OT_Arrange.bl_idname, text='Sort')
+        row.prop(process_op, 'batch_path')
+        row.operator(MORPHOBLEND_OT_BatchArrange.bl_idname, text="Load & apply", icon='IMPORT')
 
         box = layout.box()
         row = box.row()
@@ -431,6 +473,7 @@ class MORPHOBLEND_PT_Process(bpy.types.Panel):
         row.operator(MORPHOBLEND_OT_ClearFilter.bl_idname, text='Clear Results')
 
 
+
 # ------------------------------------------------------------------------
 #    Registrer/unregister calls
 # ------------------------------------------------------------------------
@@ -443,7 +486,8 @@ process_classes = (ProcessProperties,
     MORPHOBLEND_OT_Rename,
     MORPHOBLEND_OT_Arrange,
     MORPHOBLEND_OT_SelectOnVolume,
-    MORPHOBLEND_OT_ClearFilter,)
+    MORPHOBLEND_OT_ClearFilter,
+    MORPHOBLEND_OT_BatchArrange)
 
 register_classes, unregister_classes = bpy.utils.register_classes_factory(process_classes)
 

@@ -24,7 +24,7 @@
 
 ## Release notes
 
-##### v0.5.1 | Basic export  and misc. improvements [2020-10-XX]
+##### v0.5.1 | Basic export  and misc. improvements [2020-11-22]
 
 - Basic export of each cell as `PLY` 
 - Improved performances of headless importer
