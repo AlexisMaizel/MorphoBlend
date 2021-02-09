@@ -19,7 +19,7 @@ from bpy.props import (BoolProperty, BoolVectorProperty, EnumProperty,
                        FloatProperty, FloatVectorProperty, PointerProperty,
                        StringProperty, CollectionProperty)
 from bpy_extras.view3d_utils import region_2d_to_location_3d
-from mathutils import Vector, Matrix
+from mathutils import Vector
 from mathutils.bvhtree import BVHTree
 from networkx.readwrite import json_graph
 
@@ -27,7 +27,7 @@ from .Utilities import (assign_material, bmesh_copy_from_object, col_hierarchy,
                         create_materials_palette, distance2D, distance3D,
                         get_collection, get_global_coordinates, get_parent,
                         make_collection, move_obj_to_coll, move_obj_to_subcoll,
-                        previous_and_next, collections_from_pattern)
+                        previous_and_next, collections_from_pattern, show_active_tp)
 
 # ------------------------------------------------------------------------
 #    Global variable
@@ -640,7 +640,7 @@ class MORPHOBLEND_OT_3DConnectivity_Create(bpy.types.Operator):
         analyze_op.progress_bar = 0
         total_n_pairs = 0
         pairs_processed = 0
-        if _apply_to_all:
+        if _apply_to_all:  
             # Get all TP collections
             all_tp_cols = collections_from_pattern(analyze_op.tp_pattern)
             # Get the total number of pairs to be analyzed
@@ -665,12 +665,12 @@ class MORPHOBLEND_OT_3DConnectivity_Create(bpy.types.Operator):
             # Get the total number of pairs to be analyzed
             total_n_pairs = self.get_number_of_pairs(currentTP)
             G = nx.Graph()
-            print(f"Processing {len(list(combinations(tp.all_objects, 2)))} pairs...")
+            print(f"Processing {len(list(combinations(currentTP.all_objects, 2)))} pairs...")
             for objpair in combinations(bpy.context.selected_objects, 2):
                 area_intersection = self.intersection_area(objpair[0], objpair[1])
                 if area_intersection != 0:
                     # Add the pair of objects (referenced by name) as a weighted edge to the graph
-                    self.add_edge(tp_G, objpair, area_intersection)
+                    self.add_edge(G, objpair, area_intersection)
                 pairs_processed += 1
                 self.update_progress(context, pairs_processed, total_n_pairs)
             g_networks[currentTP.name] = G
@@ -691,8 +691,11 @@ class MORPHOBLEND_OT_3DConnectivity_Create(bpy.types.Operator):
 
     def get_number_of_pairs(self, inSet):
         total = 0
-        for e in inSet:
-            total += len(list(combinations(e.all_objects, 2)))
+        try:
+            for e in inSet:
+                total += len(list(combinations(e.all_objects, 2)))
+        except TypeError as te:
+            total =  len(list(combinations(inSet.all_objects, 2)))
         return total
 
     def update_progress(self, context, n_file, total):

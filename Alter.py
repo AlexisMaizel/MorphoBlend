@@ -172,7 +172,7 @@ class MORPHOBLEND_OT_Merge(bpy.types.Operator):
         # Join the two objects
         bpy.ops.object.join()
         remesh = biggest_ob.modifiers.new(name='Remesh', type='REMESH')
-        remesh.voxel_size = 0.9 / 16  # TODO  do not hard code, takes the scale of the scene into account
+        remesh.voxel_size = 0.9 / 100  # TODO  do not hard code, takes the scale of the scene into account
         remesh.use_smooth_shade = True
         remesh.mode = 'VOXEL'
         apply_modifiers(biggest_ob)
