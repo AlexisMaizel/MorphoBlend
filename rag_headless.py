@@ -28,13 +28,12 @@ def args_parser():
 
 
 def main():
-    output_basename = 'Output'
     # Get the scripts arguments
     args = args_parser()
     # Configure logging
     base_dir = Path(bpy.path.abspath(args.path)).parent
     fname = Path(bpy.path.abspath(args.path)).stem
-    log_path = Path(base_dir, output_basename).with_suffix('.log')
+    log_path = Path(base_dir, 'RAG_'+fname).with_suffix('.log')
     logging.basicConfig(level=logging.INFO, filename=log_path, filemode='w', format='%(asctime)s - %(message)s')
 
     # Open  Blender file to process
