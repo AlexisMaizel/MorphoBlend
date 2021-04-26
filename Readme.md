@@ -24,6 +24,10 @@
 
 ## Release notes
 
+##### v0.5.2 | Headless mode for 3D connectivity graph [2021-04-26]
+
+- Headless extraction of the 3D connectivity graph of cells from the command line
+
 ##### v0.5.1 | Basic export  and misc. improvements [2020-11-22]
 
 - Basic export of each cell as `PLY` 
@@ -199,7 +203,7 @@ See [this page](https://caretdashcaret.com/2015/05/19/how-to-run-blender-headles
 - the resulting `Blender` file is named  `Output.blend` and saved at the location passed to `--path`
 - the project is automatically saved after import of all files in a time point folder (`tXX` or `Txx`) has completed
 - progresses of the import are logged in `Output.log`
-- Because of the way `Blender` works, the time required to import an object increases exponentially with the amounts of objects in the scence. Consequence: it is advisable to split the import of thousands of objects in several batches that can be later combined by importing the collections from one `Blender`.
+
 
 ### Process
 
@@ -299,7 +303,7 @@ The tracking data can  be exported / imported:
 Note: the area of contact between two cells is stored as an  edge attribute.
 
 - Ticking `Extract for all cells` will generate the graph of cell connectivity for  every single cells, not just the selected ones.
-- Press `Generate` to start the process. (!) **Beware** this can be long!
+- Press `Generate` to start the process. (!) **Beware** this can be long! Consider the headless version if mny points needs to be processed.
 - Once  tracking data exist, pressing `Draw` to visualise the resulting graph
 - To erase the track data, click `Clear`.
 
@@ -307,6 +311,30 @@ The connectivity data can  be exported / imported in `JSON`:
 
 - select the path
 - press `Import` or `Export`
+
+
+**Generating 3D connectivity graph in headless mode:**
+
+Generating 3D connectivity graph  can be very slow. If you have many to generate, it is recommended to  generate them directly from the command line (without `Blender`'s GUI). This speeds up the process drastically, especially on machines with several cores.
+
+To do so, you need to launch `Blender` from a terminal in the so called *background* or *headless* mode and use the script `rag_headless.py` which can be [downloaded here](rag_headless.py):
+
+```python
+blender -b -P rag_headless.py -- --path input_file.blend --timepoints 02 05 07
+```
+
+There is one mandatory argument:
+
+- `--path`: Path to the Blender file to process
+
+There is one optional argument:
+
+- `--timepoints`:  list of time points to process. Example 00 15 62.  If omitted **all** time points are processed
+
+See [this page](https://caretdashcaret.com/2015/05/19/how-to-run-blender-headless-from-the-command-line-without-the-gui/) for instructions on how to retrieve the path to `Blender` on your machine.
+
+
+
 
 ### Quantify
 

@@ -622,9 +622,7 @@ class MORPHOBLEND_OT_3DConnectivity_Create(bpy.types.Operator):
             return context.selected_objects is not None
 
     def invoke(self, context, event):
-        analyze_op = context.scene.analyze_tool
-        if analyze_op.bool_3dconnect_all | len(context.selected_objects) > 50:
-            return context.window_manager.invoke_props_dialog(self)
+        return context.window_manager.invoke_props_dialog(self)
 
     def draw(self, context):
         row = self.layout
@@ -640,7 +638,7 @@ class MORPHOBLEND_OT_3DConnectivity_Create(bpy.types.Operator):
         analyze_op.progress_bar = 0
         total_n_pairs = 0
         pairs_processed = 0
-        if _apply_to_all:  
+        if _apply_to_all: 
             # Get all TP collections
             all_tp_cols = collections_from_pattern(analyze_op.tp_pattern)
             # Get the total number of pairs to be analyzed
