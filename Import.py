@@ -11,6 +11,7 @@ from mathutils import Matrix
 from .Utilities import (apply_modifiers, assign_material,
                         create_materials_palette, translate_to_origin)
 
+#FIXME Progress bar does not count object properly
 
 # ------------------------------------------------------------------------
 #    Global variables

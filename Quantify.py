@@ -4,7 +4,7 @@ import re
 import bpy
 import numpy as np
 from bpy.props import (CollectionProperty, EnumProperty,
-                       IntProperty, PointerProperty, StringProperty)
+                       IntProperty, PointerProperty, StringProperty, BoolProperty)
 
 from .Utilities import (Display2D_LUT_image, assign_material, create_materials_palette,
                         get_collection, get_global_coordinates,
@@ -21,6 +21,11 @@ class QuantifyProperties(bpy.types.PropertyGroup):
         default='',
         subtype='FILE_PATH'
         )
+    bool_qt_all: BoolProperty(
+        name='Quantify all',
+        description='Compute morphometric on all cells, even the non selected / visible ones',
+        default=False
+    )
     mapping_palette: EnumProperty(
         name='',
         description='Palette used to colorize.',
@@ -66,10 +71,16 @@ class MORPHOBLEND_OT_Morphometric(bpy.types.Operator):
         return formatted_line
 
     def execute(self, context):
+        process_op = context.scene.quantify_tool
+        _apply_to_all = process_op.bool_qt_all
         headers = ['Object', 'Collection', 'Volume', 'Area', 'Dim_x', 'Dim_y', 'Dim_z', 'Center_x', 'Center_y', 'Center_z']
         if not bool(context.scene.results):
             bpy.ops.morphoblend.list_action(list_item=self.format_line(headers), action='ADD')
-        for obj in bpy.context.selected_objects:
+        if _apply_to_all:
+            objects = bpy.context.scene.objects
+        else:
+            objects = bpy.context.selected_objects
+        for obj in objects:
             bpy.context.view_layer.objects.active = obj
             obj_line = []
             if obj.type == 'MESH':
@@ -288,6 +299,7 @@ class MORPHOBLEND_PT_Quantify(bpy.types.Panel):
         row.label(text=text_box, icon='OUTLINER_DATA_CURVE')
 
         row = box.row()
+        row.prop(quantify_pt, 'bool_qt_all')
         row.operator(MORPHOBLEND_OT_Morphometric.bl_idname, text='Measure!')
 
         row = box.row()

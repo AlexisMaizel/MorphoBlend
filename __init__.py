@@ -32,7 +32,7 @@ bl_info = {
     'name': 'MorphoBlend',
     'author': 'Alexis Maizel',
     'description': 'Addon for visualisation, processing and quantification of cell segmentation',
-    'blender': (2, 83, 5),
+    'blender': (3, 6, 0),
     'version': (0, 5, 2),
     'location': 'View3D',
     'warning': '',
@@ -56,7 +56,7 @@ class VIEW3D_PT_MorphoBlend(bpy.types.Panel):
 
 def install_pip():
     ''' Bootstrap pip and any dependencies into Blender's Python
-    On Blender 2.83 pip should be activated by default and this check is useless'''
+    On Blender >2.83 pip should be activated by default and this check is useless'''
     try:
         import pip
     except ImportError:
@@ -93,13 +93,13 @@ def get_package_install_directory():
 
 
 def install_package(name):
-    pybin = bpy.app.binary_path_python
+    pybin = sys.executable
     target = get_package_install_directory()
     subprocess.run([pybin, '-m', 'pip', 'install', name, '--target', target])
 
 
 def uninstall_package(name):
-    pybin = bpy.app.binary_path_python
+    pybin = sys.executable
     subprocess.run([pybin, '-m', 'pip', 'uninstall', name, '-y'])
 
 

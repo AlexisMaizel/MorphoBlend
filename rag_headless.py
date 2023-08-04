@@ -12,6 +12,8 @@ import networkx as nx
 from mathutils.bvhtree import BVHTree
 from networkx.readwrite import json_graph
 
+# TODO  import from Utilities all the necessary functions
+
 
 def args_parser():
     parser = argparse.ArgumentParser()
@@ -33,7 +35,7 @@ def main():
     # Configure logging
     base_dir = Path(bpy.path.abspath(args.path)).parent
     fname = Path(bpy.path.abspath(args.path)).stem
-    log_path = Path(base_dir, 'RAG_'+fname).with_suffix('.log')
+    log_path = Path(base_dir, 'RAG_' + fname).with_suffix('.log')
     logging.basicConfig(level=logging.INFO, filename=log_path, filemode='w', format='%(asctime)s - %(message)s')
 
     # Open  Blender file to process
@@ -42,15 +44,15 @@ def main():
 
     # Retrieve list of time points to process
     if args.timepoints is not None:
-        all_tp_cols = collections_from_pattern('[Tt]\d{1,}') # Get all TP collections
-        tp_list = list(args.timepoints) # Tp to process
+        all_tp_cols = collections_from_pattern('[Tt]\d{1,}')  # Get all TP collections
+        tp_list = list(args.timepoints)  # Tp to process
         # only keep these ones
         tp_cols = [tp for tp in all_tp_cols if tp_from_col_name(tp.name) in tp_list]  # Python
     else:
         tp_cols = collections_from_pattern('[Tt]\d{1,}')  # Get all TP collections
-    logging.info('To process: %s time points',  len(tp_cols))
+    logging.info('To process: %s time points', len(tp_cols))
 
-    #Main Loop
+    # Main Loop
     for tp in tp_cols:
         tp_G = nx.Graph()
         # Get all unique pairs of two objects and check if they are touching
@@ -63,14 +65,14 @@ def main():
         # add the Graph to the dict
         logging.info(f"Done!  {tp_G.number_of_nodes()} nodes and {tp_G.number_of_edges()} edges in {len(list(nx.connected_components(tp_G)))} RAG(s)")
         data = json_graph.node_link_data(tp_G)
-        outfile_path = Path(base_dir, fname +"_" +tp.name).with_suffix('.json')
+        outfile_path = Path(base_dir, fname + "_" + tp.name).with_suffix('.json')
         with open(outfile_path, 'w', encoding='utf-8') as f:
             json.dump(data, f)
     logging.info('Finished!')
 
 
 def tp_from_col_name(colname):
-    re_match = re.search(r'[Tt](\d{1,})' , colname)
+    re_match = re.search(r'[Tt](\d{1,})', colname)
     if re_match:
         return int(re_match.group(1))
 
@@ -88,8 +90,8 @@ def get_number_of_pairs(inSet):
     try:
         for e in inSet:
             total += len(list(combinations(e.all_objects, 2)))
-    except TypeError as te:
-        total =  len(list(combinations(inSet.all_objects, 2)))
+    except TypeError:
+        total = len(list(combinations(inSet.all_objects, 2)))
     return total
 
 
@@ -202,6 +204,7 @@ def get_collection(obj):
     if len(collections) > 0:
         return collections[0]
     return bpy.context.scene.collection
+
 
 if __name__ == '__main__':
     main()

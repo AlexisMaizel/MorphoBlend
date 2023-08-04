@@ -1,5 +1,6 @@
 import bpy
 
+# TODO  Improve the display of the lookup table. See:  https://blender.stackexchange.com/questions/190640/display-series-of-2d-squares-using-gpu-shader-module/210289#210289
 
 class BL_UI_OT_draw_operator(Operator):
     bl_idname = 'object.bl_ui_ot_draw_operator'

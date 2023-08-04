@@ -17,6 +17,9 @@ g_import_coll_name = 'Imported'
 g_max_obj = 10
 
 
+# TODO  import from Utilities all the necessary functions
+
+
 def args_parser():
     parser = argparse.ArgumentParser()
     # get all script args
@@ -150,18 +153,18 @@ def initialise(in_mat_palette, in_voxel_xyz, in_rot_val_xyz):
     g_rot_val_y = in_rot_val_xyz[1]
     g_rot_val_z = in_rot_val_xyz[2]
     # Units & scaling
-    voxel_x = in_voxel_xyz[0]
-    voxel_z = in_voxel_xyz[2]
+    # voxel_x = in_voxel_xyz[0]
+    # voxel_z = in_voxel_xyz[2]
     # FIXME ?? the scaling must factor in the rotation applied!! This must be changed in the main Morphoblend too!!!!
-    g_scaling_x =  0.01 #* voxel_z / voxel_x
-    g_scaling_y = 0.01 #* voxel_z / voxel_x
-    g_scaling_z = 0.01  #* voxel_z / voxel_x
+    g_scaling_x = 0.01   # * voxel_z / voxel_x
+    g_scaling_y = 0.01   # * voxel_z / voxel_x
+    g_scaling_z = 0.01   # * voxel_z / voxel_x
     # Set the Blender File unit setting to correct set of units
     # Although Blender accepts 'MICROMETERS', it can not accept 1e-5 as multiplicative factor (1e-5)
     # Solution: keep in meter and set .scale_length to 100
     # all measurements will be returned in meters but should be understood as µm.
     bpy.context.scene.unit_settings.length_unit = 'METERS'
-    g_scaling_units_scene = 100 #voxel_x / g_scaling_x
+    g_scaling_units_scene = 100  # voxel_x / g_scaling_x
     bpy.context.scene.unit_settings.scale_length = g_scaling_units_scene
 
 

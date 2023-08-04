@@ -1,7 +1,7 @@
 import re
 
 import bpy
-from bpy.props import BoolProperty, PointerProperty, EnumProperty
+from bpy.props import BoolProperty, PointerProperty, EnumProperty, StringProperty
 
 from .Utilities import (unique_colls_names_list,
                         col_hierarchy,
@@ -38,6 +38,11 @@ class RenderProperties(bpy.types.PropertyGroup):
         description='Uniques collections',
         items=unique_colls_callback
     )
+    tp_pattern: StringProperty(
+        name='Time point pattern',
+        description='Regex pattern describing time points',  # Matches time point (t1, T42, t09, etc...)
+        default='[Tt]\d{1,}'
+    )
 
 # ------------------------------------------------------------------------
 #    Global variable
@@ -59,7 +64,7 @@ class MORPHOBLEND_OT_NextTimePoint(bpy.types.Operator):
         return True
 
     def execute(self, context):
-        analyze_op = context.scene.analyze_tool
+        analyze_op = context.scene.render_tool
         # Get all TP collections at the topmost level
         all_tp_cols = collections_from_pattern(analyze_op.tp_pattern)
         # Retrieve the currently active TP collection and make it the only visible
@@ -86,9 +91,9 @@ class MORPHOBLEND_OT_PreviousTimePoint(bpy.types.Operator):
         return True
 
     def execute(self, context):
-        analyze_op = context.scene.analyze_tool
+        render_op = context.scene.render_tool
         # Get all TP collections at the topmost level
-        all_tp_cols = collections_from_pattern(analyze_op.tp_pattern)
+        all_tp_cols = collections_from_pattern(render_op.tp_pattern)
         # Retrieve the currently active TP collection and make it the only visible
         currentTPcoll = show_active_tp(context)
         # Get the previous time point and display it
@@ -100,7 +105,7 @@ class MORPHOBLEND_OT_PreviousTimePoint(bpy.types.Operator):
             self.report({'WARNING'}, "Problem")
         return{'FINISHED'}
 
-
+# TODO  THIS IS USELESS: REMOVE - Replace with the function to render over all TPs
 class MORPHOBLEND_OT_ChangeVisibilityCollection(bpy.types.Operator):
     '''Set visibility of collections based on name pattern matching.'''
     bl_idname = 'morphoblend.toggle_visibility_collections'

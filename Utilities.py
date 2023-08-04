@@ -141,8 +141,8 @@ def get_collection(obj):
 
 
 def show_active_tp(context):
-    '''Get the last active time point collection and make it the only one visible in viewport'''
-    analyze_op = context.scene.analyze_tool
+    '''Get the last active time point collection and make it the only one visible in viewport and renderer'''
+    analyze_op = context.scene.render_tool
     all_tp_cols = collections_from_pattern(analyze_op.tp_pattern)
     current_col = context.collection
     if re.match(analyze_op.tp_pattern, current_col.name):
@@ -153,8 +153,10 @@ def show_active_tp(context):
     for col in all_tp_cols:
         if col == currentTPcoll:
             col.hide_viewport = False
+            col.hide_render = False
         else:
             col.hide_viewport = True
+            col.hide_render = True
     return currentTPcoll
 
 
@@ -180,7 +182,9 @@ def collection_navigator(inCollList, inCurrentColl, direction):
 def hide_display(currentTPcoll, next_tp):
     ''' Hide current collection, display the next one'''
     currentTPcoll.hide_viewport = True
+    currentTPcoll.hide_render = True
     next_tp.hide_viewport = False
+    next_tp.hide_render = False
     layer_collection = bpy.context.view_layer.layer_collection.children[next_tp.name]
     bpy.context.view_layer.active_layer_collection = layer_collection
     info_mess = 'Visible: ' + next_tp.name
