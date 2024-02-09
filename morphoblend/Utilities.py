@@ -4,6 +4,8 @@ from random import randrange
 
 import re
 import bgl
+# TODO Handle the potential issu with bgl
+# import gpu #'bgl' imported without an OpenGL backend. Please update your add-ons to use the 'gpu' module. In Blender 4.0 'bgl' will be removed.
 import blf
 import bmesh
 import bpy
@@ -73,6 +75,20 @@ def create_materials_palette(inPaletteName):
         else:
             _mat_palette.append(bpy.data.materials.get(material_name))
     return _mat_palette
+
+def assign_color(inObj, inMatPalette, color_index=0, rand_color=False): 
+    # Colorize an object using color from a palette optionally randomely
+    if rand_color:
+        material = inMatPalette[randrange(len(inMatPalette))]
+    elif color_index < len(inMatPalette):
+        material = inMatPalette[color_index]
+    else:
+        material = inMatPalette[len(inMatPalette)]
+
+    if inObj.data.materials:
+        inObj.data.materials[0] = material
+    else:
+        inObj.data.materials.append(material)
 
 
 def assign_material(inObj, inMatPalette, color_index=0, rand_color=False):
@@ -289,6 +305,30 @@ def unique_colls_names_list():
         names_elements.extend(name_element)
     # return a sorted list of unique names
     return sorted(list(set(names_elements)), key=lambda i: i[0].lower())
+
+# ------------------------------------------------------------------------
+#    Files and folders
+# ------------------------------------------------------------------------
+
+def number_of_file_to_import(folder_path, allowed_extension, include_subfolders=True):
+    folder_path = Path(folder_path)
+    if not folder_path.is_dir():
+        raise ValueError("The provided path is not a directory.")
+
+    # Initialize count
+    file_count = 0
+
+    # Iterate through all files and subdirectories recursively if include_subfolders is True
+    if include_subfolders:
+        for file_path in folder_path.rglob("*"):
+             if file_path.is_file() and file_path.suffix in allowed_extension:
+                file_count += 1
+    else:
+        for file_path in folder_path.glob("*"):
+            if file_path.is_file() and file_path.suffix in allowed_extension:
+                file_count += 1
+
+    return file_count
 
 
 # ------------------------------------------------------------------------

@@ -29,11 +29,11 @@ from .Render import MORPHOBLEND_PT_Render, register_render, unregister_render
 from .Export import MORPHOBLEND_PT_Export, register_export, unregister_export
 
 bl_info = {
-    'name': 'MorphoBlend',
+    'name': 'morphoblend',
     'author': 'Alexis Maizel',
     'description': 'Addon for visualisation, processing and quantification of cell segmentation',
     'blender': (3, 6, 0),
-    'version': (0, 5, 2),
+    'version': (0, 5, 4),
     'location': 'View3D',
     'warning': '',
     'category': 'Generic'

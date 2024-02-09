@@ -1123,7 +1123,7 @@ class MORPHOBLEND_PT_Analyze(bpy.types.Panel):
             text_box = f"Assign root layers [{str(len(bpy.context.selected_objects))} selected cells]"
         else:
             text_box = f"Assign root layers [{str(len(bpy.context.selected_objects))} selected cell]"
-        row.label(text=text_box, icon='HAIR')
+        row.label(text=text_box, icon='NODE_SEL')
 
         row = box.row()
         row.label(text='Radial plane defined by:')
@@ -1149,12 +1149,12 @@ class MORPHOBLEND_PT_Analyze(bpy.types.Panel):
         row = box.row()
         row.prop(analyze_op, 'bool_at_all')
         row.prop(analyze_op, 'bool_at_color_cells')
-        row.operator(MORPHOBLEND_OT_AssignRootLayers.bl_idname, text='Assign layers', icon='HAIR')
+        row.operator(MORPHOBLEND_OT_AssignRootLayers.bl_idname, text='Assign layers', icon='PLUS')
         row.operator(MORPHOBLEND_OT_ClearRootLayers.bl_idname, text='Clear layers', icon='X')
 
         box = layout.box()
         row = box.row()
-        row.label(text="Track cells", icon='TRACKING_REFINE_BACKWARDS')
+        row.label(text="Track cells", icon='EVENT_PAGEDOWN')
 
         row = box.row()
         row.label(text="Threshold for tracking (µm):")

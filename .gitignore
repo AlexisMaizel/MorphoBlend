@@ -7,3 +7,5 @@ Roadmap.md
 /.vscode/
 .gitignore
 scrapbook.py
+/resources/
+Overview.md

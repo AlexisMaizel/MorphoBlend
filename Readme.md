@@ -166,7 +166,7 @@ Files located in a subfolder will be automatically placed in a sub-collection of
 
 - **Camera pixel size**: physical dimensions of the camera pixel (default is 6.5µm).
 
-- **Voxel size**: physical dimensions of the voxel in µm. *X* and *Y* values are computed from the camera pixel size and the magnification used. This controls the anisotropic scaling of the meshes and all calculations (volume, area, dimensions...).
+- **Voxel size**: physical dimensions of the voxel in µm. *X* and *Y* values are either computed from the camera pixel size and the magnification used or can be entered manually. This controls the anisotropic scaling of the meshes and all calculations (volume, area, dimensions...).
 
 **Post-processing:**
 

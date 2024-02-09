@@ -1,6 +1,7 @@
 import bpy
 from bpy.props import BoolProperty, PointerProperty, StringProperty
 from .Utilities import  get_collection
+
 # ------------------------------------------------------------------------
 #    Properties
 # ------------------------------------------------------------------------
