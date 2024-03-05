@@ -33,7 +33,7 @@ bl_info = {
     'author': 'Alexis Maizel',
     'description': 'Addon for visualisation, processing and quantification of cell segmentation',
     'blender': (3, 6, 0),
-    'version': (0, 5, 4),
+    'version': (0, 5, 5),
     'location': 'View3D',
     'warning': '',
     'category': 'Generic'

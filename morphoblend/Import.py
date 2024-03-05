@@ -21,7 +21,6 @@ g_allowed_extension = ('.obj', '.OBJ', '.ply', '.PLY')
 
 def import_process_assign(inColl=None, inFilePath=''):
     '''Import, process and assign all mesh files into collections'''
-    # TODO Support for import of OBJ → bpy.ops.import_scene.obj
     if (inFilePath.endswith('.ply') | inFilePath.endswith('.PLY')):
         bpy.ops.import_mesh.ply(filepath=inFilePath)
     elif (inFilePath.endswith('.obj') | inFilePath.endswith('.OBJ')):
@@ -98,9 +97,9 @@ def initialise(in_mat_palette, in_voxel_xyz, in_rot_val_xyz):
     # Units & scaling
     voxel_x = in_voxel_xyz[0]
     voxel_z = in_voxel_xyz[2]
-    g_scaling_x =  0.01 * voxel_z / voxel_x
-    g_scaling_y = 0.01 * voxel_z / voxel_x
-    g_scaling_z = 0.01 * voxel_z / voxel_x
+    g_scaling_x =  0.01 #voxel_z / voxel_x
+    g_scaling_y = 0.01 #voxel_z / voxel_x
+    g_scaling_z = 0.01 #voxel_z / voxel_x
     # Set the Blender File unit setting to correct set of units
     # Although Blender accepts 'MICROMETERS', it can not accept 1e-5 as multiplicative factor (1e-5)
     # Solution: keep in meter and set .scale_length to  100
