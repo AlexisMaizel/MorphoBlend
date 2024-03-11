@@ -96,7 +96,7 @@ class MORPHOBLEND_OT_Morphometric(bpy.types.Operator):
                 obj_line.extend([f'{vol_obj:.3f}', f'{area_obj:.3f}', f'{vol_obj/area_obj:.3f}'])
                 dims = scaled_dimensions(obj)
                 obj_line.extend([f'{dims[0]:.3f}', f'{dims[1]:.3f}', f'{dims[2]:.3f}'])
-                obj_center = get_global_coordinates(obj)
+                obj_center = get_global_coordinates(obj) * bpy.context.scene.unit_settings.scale_length
                 obj_line.extend([f'{obj_center[0]:.3f}', f'{obj_center[1]:.3f}', f'{obj_center[2]:.3f}'])
                 print(obj_line)
                 bpy.ops.morphoblend.list_action(list_item=self.format_line(obj_line), action='ADD')

@@ -340,7 +340,7 @@ def get_global_coordinates(inObj):
         v_co_world = inObj.matrix_world @ inObj.data.vertices[0].co
     else:
         v_co_world = inObj.matrix_world.translation
-    return v_co_world * bpy.context.scene.unit_settings.scale_length
+    return v_co_world
 
 
 def scaled_dimensions(inObj):
