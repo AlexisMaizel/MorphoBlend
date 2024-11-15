@@ -7,6 +7,8 @@ from pathlib import Path
 from random import randrange
 
 from mathutils import Matrix
+import mathutils
+from math import acos, pi
 
 import bmesh
 import bpy
@@ -1033,6 +1035,160 @@ class MORPHOBLEND_OT_Nuclei_Draw(bpy.types.Operator):
                 nucleus.dimensions = [0.25, 0.25, 0.25]
                 move_obj_to_coll(nucleus, DestColl)
 
+class mapping_lists:
+    _instance = None
+    cells = []
+    nuclei = []
+
+    def __new__(cls, *args, **kwargs):
+        if not cls._instance:
+            cls._instance = super(mapping_lists, cls).__new__(cls, *args, **kwargs)
+        return cls._instance
+
+
+def add_to_mapping_lists(selected_objects, target_list):
+    k=0
+    map_lists = mapping_lists()
+    for obj in selected_objects:
+        if target_list == "nuclei":
+            map_lists.nuclei.append(obj)
+        else:
+            map_lists.cells.append(obj)
+        k += 1
+    return k
+
+def clear_mapping_lists(target_list):
+    map_lists = mapping_lists()
+    if target_list == "nuclei":
+        map_lists.nuclei =[]
+    else:
+        map_lists.cells = []
+
+
+class MORPHOBLEND_OT_Nuc2Cell_Cells(bpy.types.Operator):
+    ''' Define set of cells '''
+    bl_idname = 'morphoblend.nuc2cells_cells'
+    bl_label = 'Define set of cells '
+    bl_description = 'Define selection as  set of cells to use for mapping '
+    bl_options = {'INTERNAL'}
+
+    @classmethod
+    def poll(cls, context):
+        return context.active_object is not None and context.object.select_get() and context.object.type == 'MESH'
+
+    def execute(self, context):
+        k= add_to_mapping_lists(bpy.context.selected_objects, 'cells')
+        info_mess = f"{k} objects added!"
+        self.report({'INFO'}, info_mess)
+        return{'FINISHED'}
+
+class MORPHOBLEND_OT_Nuc2Cell_Cells_clear(bpy.types.Operator):
+    ''' Clear set of cells '''
+    bl_idname = 'morphoblend.nuc2cells_cells_clear'
+    bl_label = 'Clear set of cells '
+    bl_description = 'Clear set of cells to use for mapping '
+    bl_options = {'INTERNAL'}
+
+    @classmethod
+    def poll(cls, context):
+        return True
+
+    def execute(self, context):
+        clear_mapping_lists('cells')
+        info_mess = f"List cleared!"
+        self.report({'INFO'}, info_mess)
+        return{'FINISHED'}
+
+class MORPHOBLEND_OT_Nuc2Cell_Nuclei_clear(bpy.types.Operator):
+    ''' Clear set of nuclei '''
+    bl_idname = 'morphoblend.nuc2cells_nuclei_clear'
+    bl_label = 'Clear set of nuclei '
+    bl_description = 'Clear set of nuclei to use for mapping '
+    bl_options = {'INTERNAL'}
+
+    @classmethod
+    def poll(cls, context):
+        return True
+
+    def execute(self, context):
+        clear_mapping_lists('nuclei')
+        info_mess = f"List cleared!"
+        self.report({'INFO'}, info_mess)
+        return{'FINISHED'}
+
+class MORPHOBLEND_OT_Nuc2Cell_Nuclei(bpy.types.Operator):
+    ''' Define set of cells '''
+    bl_idname = 'morphoblend.nuc2cells_nuclei'
+    bl_label = 'Define set of nuclei '
+    bl_description = 'Define selection as  set of nuclei to use for mapping '
+    bl_options = {'INTERNAL'}
+
+    @classmethod
+    def poll(cls, context):
+        return context.active_object is not None and context.object.select_get() and context.object.type == 'MESH'
+
+    def execute(self, context):
+        k= add_to_mapping_lists(bpy.context.selected_objects, 'nuclei')
+        info_mess = f"{k} objects added!"
+        self.report({'INFO'}, info_mess)
+        return{'FINISHED'}
+
+class MORPHOBLEND_OT_Nuc2Cell_Map (bpy.types.Operator):
+    ''' Map Nuclei to Cells '''
+    bl_idname = 'morphoblend.nuc2cells_map'
+    bl_label = 'Map Nuclei to Cells '
+    bl_description = 'Map nuclei to cells '
+    bl_options = {'INTERNAL'}
+
+    @classmethod
+    def poll(cls, context):
+        map_list  = mapping_lists()
+        return map_list.cells and map_list.nuclei
+
+    def  is_point_inside(self, point, obj):
+        """
+        Checks if a point is inside the mesh of an object.
+        Args:
+            point (mathutils.Vector): The point in global space.
+            obj (Object): The mesh object to check against.
+        Returns:
+            bool: True if the point is inside, False otherwise.
+        """
+        # Convert point to the local space of the object
+        local_point = obj.matrix_world.inverted() @ point
+        # Check if the point is inside the mesh
+        _, pt_closest, face_normal, _ = obj.closest_point_on_mesh(local_point)
+        # Get the target-closest pt vector
+        target_closest_pt_vec = (pt_closest - local_point).normalized()
+        # Compute the dot product = |a||b|*cos(angle)
+        dot_prod = target_closest_pt_vec.dot(face_normal)
+        # Get the angle between the normal and the target-closest-pt vector (from the dot prod)
+        angle = acos(min(max(dot_prod, -1), 1)) * 180 / pi
+        # Allow for some rounding error
+        inside = angle < 90-0.02
+        return inside
+
+    def execute(self, context):
+            k = 0
+            map_lists = mapping_lists()
+            for nuc_obj in map_lists.nuclei:
+                nuc_center = nuc_obj.location
+                for cell_obj in map_lists.cells:
+                    if cell_obj.type == 'MESH':
+                        mapped =self.is_point_inside(nuc_center, cell_obj)
+                        if mapped:
+                            # Store the child's world transformation
+                            world_matrix = nuc_obj.matrix_world.copy()
+                            # Set the parent
+                            nuc_obj.parent = cell_obj
+                            # Restore the world transformation
+                            nuc_obj.matrix_world = world_matrix
+                            k += 1
+                            break
+            info_mess = f"{k} mapping(s) done!"
+            self.report({'INFO'}, info_mess)
+            return {'FINISHED'}
+
 
 
 # ------------------------------------------------------------------------
@@ -1200,13 +1356,17 @@ class MORPHOBLEND_PT_Analyze(bpy.types.Panel):
 
         box = layout.box()
         row = box.row()
-        row.label(text="Nuclei", icon='PARTICLES')
+        row.label(text="Map Nuclei to Cells", icon='PIVOT_INDIVIDUAL')
 
         row = box.row()
-        row.prop(analyze_op, 'import_nuclei_path')
-        row.operator(MORPHOBLEND_OT_Nuclei_Import.bl_idname, text='Import', icon='IMPORT')
+        row.operator(MORPHOBLEND_OT_Nuc2Cell_Cells.bl_idname, text='Define Cells Set', icon='META_CUBE')
+        row.operator(MORPHOBLEND_OT_Nuc2Cell_Nuclei.bl_idname, text='Define Nuclei Set', icon='META_BALL')
         row = box.row()
-        row.operator(MORPHOBLEND_OT_Nuclei_Draw.bl_idname, text='Draw', icon='BRUSH_TEXDRAW')
+        row.operator(MORPHOBLEND_OT_Nuc2Cell_Cells_clear.bl_idname, text='Clear Cells Set', icon='CANCEL')
+        row.operator(MORPHOBLEND_OT_Nuc2Cell_Nuclei_clear.bl_idname, text='Clear Nuclei Set', icon='CANCEL')
+        row = box.row()
+        row.operator(MORPHOBLEND_OT_Nuc2Cell_Map.bl_idname, text='Map', icon='CON_TRACKTO')
+
 
 
 # ------------------------------------------------------------------------
@@ -1231,7 +1391,12 @@ render_classes = (AnalyzeProperties,
     MORPHOBLEND_OT_3DConnectivity_Export,
     MORPHOBLEND_OT_3DConnectivity_Import,
     MORPHOBLEND_OT_Nuclei_Import,
-    MORPHOBLEND_OT_Nuclei_Draw)
+    MORPHOBLEND_OT_Nuclei_Draw,
+    MORPHOBLEND_OT_Nuc2Cell_Cells,
+    MORPHOBLEND_OT_Nuc2Cell_Nuclei,
+    MORPHOBLEND_OT_Nuc2Cell_Cells_clear,
+    MORPHOBLEND_OT_Nuc2Cell_Nuclei_clear, 
+    MORPHOBLEND_OT_Nuc2Cell_Map)
 
 register_classes, unregister_classes = bpy.utils.register_classes_factory(render_classes)
 

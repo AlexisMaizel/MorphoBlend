@@ -77,7 +77,7 @@ class MORPHOBLEND_OT_Morphometric(bpy.types.Operator):
     def execute(self, context):
         process_op = context.scene.quantify_tool
         _apply_to_all = process_op.bool_qt_all
-        headers = ['Object', 'Collection', 'Volume', 'Area', 'VSR', 'Dim_x', 'Dim_y', 'Dim_z', 'Center_x', 'Center_y', 'Center_z']
+        headers = ['Object', 'Parent', 'Collection', 'Volume', 'Area', 'VSR', 'Dim_x', 'Dim_y', 'Dim_z', 'Center_x', 'Center_y', 'Center_z']
         if not bool(context.scene.results):
             bpy.ops.morphoblend.list_action(list_item=self.format_line(headers), action='ADD')
         if _apply_to_all:
@@ -90,6 +90,11 @@ class MORPHOBLEND_OT_Morphometric(bpy.types.Operator):
             if obj.type == 'MESH':
                 obj.name.replace(' ', '_')
                 obj_line.append(obj.name)
+                if(obj.parent):
+                    obj.parent.name.replace(' ', '_')
+                    obj_line.append(obj.parent.name)
+                else:
+                    obj_line.append('-')
                 obj_coll = get_collection(bpy.data.objects[obj.name]).name.replace(' ', '_')
                 obj_line.append(obj_coll)
                 vol_obj, area_obj = volume_and_area_from_object(obj)
