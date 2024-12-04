@@ -2,7 +2,7 @@
 
 **Morphoblend** is an add-on for `Blender` for the import, processing, editing, quantification, rendering and export of cellular meshes derived from light microscopy data.
 
-**MorphoBlend** has been designed as a companion to **PlantSeg** (see PlantSeg on [GitHub](https://github.com/hci-unihd/plant-seg) and the [publication](https://elifesciences.org/articles/57613)) a tool for cell instance  segmentation in densely packed 3D volumetric images of plant tissues. Together with **seg2mesh** (see seg2mesh on [GitHub](https://github.com/lorenzocerrone/python-seg2mesh)), it alows to visualise, process, edit and quantify cells in tissues:
+**MorphoBlend** has been designed as a companion to **PlantSeg** (see PlantSeg on [GitHub](https://github.com/hci-unihd/plant-seg) and the [publication](https://elifesciences.org/articles/57613)) a tool for cell instance segmentation in densely packed 3D volumetric images of plant tissues. Together with **seg2mesh** (see seg2mesh on [GitHub](https://github.com/lorenzocerrone/python-seg2mesh)), it alows to visualise, process, edit and quantify cells in tissues:
 
 ![The MorphoBlend AddOn](Images/Morphoblend_Banner.png)
 
@@ -18,67 +18,8 @@
 - Easy navigation through time series
 - Quantification, visualisation and export of cell attributes (volume, area, ...).
 - Assign root tissues
-- Tracking of cells
 - Extraction of 3D connectivity graph.
-- ... more to come :-).
-
-## Release notes
-
-##### v0.5.2 | Headless mode for 3D connectivity graph [2021-04-26]
-
-- Headless extraction of the 3D connectivity graph of cells from the command line
-
-##### v0.5.1 | Basic export  and misc. improvements [2020-11-22]
-
-- Basic export of each cell as `PLY` 
-- Improved performances of headless importer
-- Improved performances of Filtering based on volume: implemented caching to speed up repeated filtering.
-
-##### v0.5.0 | Cell tracking and 3D connectivity graph [2020-10-16]
-
-- Basic tracking of cells over time to establish lineages
-- Extraction of the 3D connectivity graph of cells
-- Code cleanup, bug fixing and misc. improvement
-
-##### v0.4.0 | Assign root tissues & headless import [2020-09-21]
-
-- Assign radial root tissues (layers)
-- Set visibility of groups of tissues
-- Headless import: it is now possible to import PLY files directly from the command line.
-- Voxel dimensions (*x* and *y*) are now set from the magnification.
-
-##### v0.3.5 | Time point navigation [2020-09-04]
-
-- Navigate through time points using the keyboard.
-- Clear the *Filter results* collection (without deleting the objects!).
-- Improved readability and style of code.
-
-##### v0.3.4 | Filter cells based on volume [2020-08-14]
-
-Cells which volume is in a given range are selected and listed (as aliases) in a *Filter results* collection. Works on a selection or on *all* cells of the scene (visible or not).
-
-##### v0.3.3 | Bulk color cells in collection [2020-08-12]
-
- All cells present in a collection matching a given pattern (`regex`-style) can be colored.
-
-##### v0.3.2 | Bug fixes [2020-08-10]
-
-##### v0.3.1 | Bug fixes & improvements [2020-08-07]
-
-Fixed (nasty) bug affecting the volume computation.
-Colorize cells according to volume or area.
-
-##### v0.3.0 | Splitting and merging [2020-08-07]
-
-Cells can be split and merged interactively. Cells to be processed can be added/removed from the `Work List` which can be navigated.
-
-##### v0.2.0 | Quantification and visualisation [2020-08-01]
-
-Quantification of cell volumes & area.
-
-##### v0.1.0 | Initial release [2019-12-18]
-
-Import and Process modules implemented.
+- Mapping of nuclei to cells
 
 ## Requirements
 
@@ -98,10 +39,7 @@ Import and Process modules implemented.
 
 ## Gallery
 
-![Gallery](Images/LR_1.png)
-![Gallery](Images/LR_2.png)
-![Gallery](Images/Ovule.png)
-![Gallery](Images/Ovule2.png)
+![Gallery](Images/LR_1.png) ![Gallery](Images/LR_2.png) ![Gallery](Images/Ovule.png) ![Gallery](Images/Ovule2.png)
 
 ## Acknowledgments
 
@@ -111,9 +49,9 @@ The following people have actively contributed to the development, improvement o
 
 ## Using MorphoBlend
 
-**MorphoBlend** is available as a tab on the right side of Blender's main 3D viewport.
-It consists of several modules:
+**MorphoBlend** is available as a tab on the right side of Blender's main 3D viewport. It consists of several modules:
 
+- Updates
 - Import
 - Process
 - Alter
@@ -122,14 +60,13 @@ It consists of several modules:
 - Render
 - Export
 
-![The MorphoBlend AddOn](Images/MorphoBlend.png)
+![The MorphoBlend AddOn](Images/Overview_06.png)
 
 ### Keyboard shortcuts
 
-- Navigate through time points:
-Mouse pointer *must* be in main window and time points *must* be collections starting with `t` or `T` followed by digits only (*e.g.* `t42` or `T123`):
-  - `Ctrl + Shift + Down_arrow`: **next** time point
-  - `Ctrl + Shift + Up_arrow`: **previous** time point
+- Navigate through time points: Mouse pointer *must* be in main window and time points *must* be collections starting with `t` or `T` followed by digits only (*e.g.* `t42` or `T123`):
+    - `Ctrl + Shift + Down_arrow`: **next** time point
+    - `Ctrl + Shift + Up_arrow`: **previous** time point
 
 ### Import
 
@@ -137,13 +74,13 @@ This module handles import of the cells mesh and their immediate post-processing
 
 ![The MorphoBlend AddOn](Images/Import.png)
 
-**Path:** Type or select (click on `folder` icon) a folder containing the files to import. Only files in  `PLY` format can be imported. The importer will import:
+**Path:** Type or select (click on `folder` icon) a folder containing the files to import. Only files in `PLY` format can be imported. The importer will import:
 
 - all files in the folder which end by `.ply`
 
 - all `ply` files contained in sub-folders of the main folder as long as this is named `tXX` (*eg* t03). This allows the automatic import of whole time series.
 
-```python
+``` python
 \Folder:
   |---> file1.ply               <- will be imported
   |---> file2.txt               <- will NOT be imported
@@ -174,9 +111,9 @@ Files located in a subfolder will be automatically placed in a sub-collection of
 
 - **Finalize smoothing**: whether all cells are remeshed and decimated to keep their aspects correct and reduce the number of triangle. Beware: not ticking this box can result in **large** files.
 
-- **Color cells**:  to assign or not a color at random from the selected **palette**.
+- **Color cells**: to assign or not a color at random from the selected **palette**.
 
-**Import:** Pressing this button will start the import process. The bar indicates progress. **(!)** Check *known bug section*.
+**Import:** Pressing this button will start the import process. The bar indicates progress.
 
 **Translate to origin:** Pressing this button will translate *all* objects so that they are centered onto the scene origin.
 
@@ -186,11 +123,11 @@ The import function is relatively slow. If you have large numbers of objects to 
 
 To do so, you need to launch `Blender` from a terminal in the so called *background* or *headless* mode and use the script `import_headless.py` which can be [downloaded here](import_headless.py):
 
-```python
+``` python
 blender -b -P import_headless.py -- --path ~/Desktop/Jaz_test_ply --voxel 0.250 0.1083 0.1083 --rotation O O O
 ```
 
-The `-b` option tells `Blender` to run in the background,  `-P` the path to the script to execute, and everything beyond `--` are the script arguments.
+The `-b` option tells `Blender` to run in the background, `-P` the path to the script to execute, and everything beyond `--` are the script arguments.
 
 There are three mandatory arguments:
 
@@ -202,10 +139,9 @@ See [this page](https://caretdashcaret.com/2015/05/19/how-to-run-blender-headles
 
 **Good to know**:
 
-- the resulting `Blender` file is named  `Output.blend` and saved at the location passed to `--path`
+- the resulting `Blender` file is named `Output.blend` and saved at the location passed to `--path`
 - the project is automatically saved after import of all files in a time point folder (`tXX` or `Txx`) has completed
 - progresses of the import are logged in `Output.log`
-
 
 ### Process
 
@@ -215,13 +151,13 @@ This modules handles the selection, colouring, sorting and filtering of the cell
 
 **Assing color:** assign to a selection of cells either a specific color (prefix `[C]`) or a color at random in a palette (prefix `[P]`). In the latter case, pressing `Color` several times shuffle the color assignment, which is interesting when neighbouring cells have similar colors.
 
-You can also color all cells in collection(s) matching the term on the pull down menu. Then press `Color all`  are assigned a specific color or colored randomely from the chosen palette.
+You can also color all cells in collection(s) matching the term on the pull down menu. Then press `Color all` are assigned a specific color or colored randomely from the chosen palette.
 
 **Rename:** will rename all selected objects. `regex`-style expression can be used in the search and replace fields. `Replace all` will do this for all cells, also the hidden ones.
 
 **Group into collection:** will move all objects which name fit the `regex`-style expression, to a collection of the same name.
 
-**Filter on volume:** Cells which volume is in a given range are selected and listed (as *aliases*) in a *Filter results* collection. When `Apply filter to all` is ticked,  the filtering is applied to *all* cells of the scene (visible or not, selected or not).
+**Filter on volume:** Cells which volume is in a given range are selected and listed (as *aliases*) in a *Filter results* collection. When `Apply filter to all` is ticked, the filtering is applied to *all* cells of the scene (visible or not, selected or not).
 
 ### Alter
 
@@ -242,12 +178,11 @@ There are keyboard shortcuts to call the functions; hover the mouse over the but
 **Split:** This splits a single cell. This is a two steps, semi automatic process:
 
 - **Phase 1 - Cutting the cells**:
-    1. Press the `Start split` button this will activate the mesh edit mode  **just for the cell to split**. No need to worry about the other cells around, they can't be edited.
-    2. Using the `KNIFE` or `BISECT` tools (located on the left tool bar), delineated a plan (`BISECT` tool) or a path (`KNIFE` tool) on the mesh along which the cells will be cut.
-    3. Press `ENTER`
-    4. Press `V` to rip the mesh apart. Do ***not*** touch the mouse, use the keybaord arrows to move the cut a little (3-4 keystrokes are sufficient).
-    5. Press `ENTER`.
-
+    1.  Press the `Start split` button this will activate the mesh edit mode **just for the cell to split**. No need to worry about the other cells around, they can't be edited.
+    2.  Using the `KNIFE` or `BISECT` tools (located on the left tool bar), delineated a plan (`BISECT` tool) or a path (`KNIFE` tool) on the mesh along which the cells will be cut.
+    3.  Press `ENTER`
+    4.  Press `V` to rip the mesh apart. Do ***not*** touch the mouse, use the keybaord arrows to move the cut a little (3-4 keystrokes are sufficient).
+    5.  Press `ENTER`.
 - **Phase 2 - Finalise the split** Press the `Finish Split`. The split cells will be separated in two new cells and their names updated.
 
 **Demos:**
@@ -270,8 +205,9 @@ This module handles analyses on cells in tissues.
 
 ![The MorphoBlend AddOn](Images/Analyze.png)
 
-**Assign root layers:** This will assign *Epidermis*, *Cortex*, *Endodermis* and *Stele* identity based on the radial distance from the center of the root.
-For this you must:
+#### Assign root layers
+
+This will assign *Epidermis*, *Cortex*, *Endodermis* and *Stele* identity based on the radial distance from the center of the root. For this you must:
 
 - define the radial plane by ticking the appropriate boxes.
 - Indicate the position of the root center. You can enter the values directly in the *X/Y/Z* fields **OR** position it interactively by pressing the **'Interactive'** button.
@@ -287,41 +223,59 @@ For this you must:
 
 [Link to video](https://youtu.be/E-JgUqVLHZM)
 
-**Track cells:** This will attempt to track cells over time by closest proximity. This is relatively crude but produces decent results for non dividing, non swelling cells.
+<!-- #### Track cells
+
+ This will attempt to track cells over time by closest proximity. This is relatively crude but produces decent results for non dividing, non swelling cells.
 
 The sole parameter to tune is the `Threshold for tracking`: the higher the value the more tolerant.
 
 - Ticking `Track all cells` will track every single cells, not just the selected ones.
 - Press `Track` to start the tracking process.
-- Once  tracking data exist, pressing `Color` will assign a unique color to each lineage
+- Once tracking data exist, pressing `Color` will assign a unique color to each lineage
 - To erase the track data, click `Clear`.
 
-The tracking data can  be exported / imported:
+The tracking data can be exported / imported:
 
 - select the path
-- press `Import` or `Export`
+- press `Import` or `Export` -->
 
-**3D connectivity graph:** This will generate the graph of cell connectivity: adjacent cells are nodes linked by an edge.
-Note: the area of contact between two cells is stored as an  edge attribute.
+#### 3D connectivity graph
 
-- Ticking `Extract for all cells` will generate the graph of cell connectivity for  every single cells, not just the selected ones.
+ This will generate the graph of cell connectivity: adjacent cells are nodes linked by an edge. Note: the area of contact between two cells is stored as an edge attribute.
+
+- Ticking `Extract for all cells` will generate the graph of cell connectivity for every single cells, not just the selected ones.
 - Press `Generate` to start the process. (!) **Beware** this can be long! Consider the headless version if mny points needs to be processed.
-- Once  tracking data exist, pressing `Draw` to visualise the resulting graph
+- Once tracking data exist, pressing `Draw` to visualise the resulting graph
 - To erase the track data, click `Clear`.
 
-The connectivity data can  be exported / imported in `JSON`:
+The connectivity data can be exported / imported in `JSON`:
 
 - select the path
 - press `Import` or `Export`
+
+#### Map Nuclei to Cells
+
+Provided that nuclei and cells objects are present, this will map to a cell a nuclei if this one is fully enclosed into the  cell mesh. 
+
+![Mapping Nuclei to Cells](Images/MapNuc2cells.png)
+
+To proceed do the following:
+- select all Nuclei objects and click `Add to Nuclei Set`
+- select all Cells objects and click `Add to Cell Set`
+- Press `Map`
+
+The `Sort non mapped` option will put in a subcollection all cells and nuclei that could not be mapped. This is convenient to review these. 
+
+You can clear the current sets by pressing on `Clear Cells (Nuclei) Set`
 
 
 **Generating 3D connectivity graph in headless mode:**
 
-Generating 3D connectivity graph  can be very slow. If you have many to generate, it is recommended to  generate them directly from the command line (without `Blender`'s GUI). This speeds up the process drastically, especially on machines with several cores.
+Generating 3D connectivity graph can be very slow. If you have many to generate, it is recommended to generate them directly from the command line (without `Blender`'s GUI). This speeds up the process drastically, especially on machines with several cores.
 
 To do so, you need to launch `Blender` from a terminal in the so called *background* or *headless* mode and use the script `rag_headless.py` which can be [downloaded here](rag_headless.py):
 
-```python
+``` python
 blender -b -P rag_headless.py -- --path input_file.blend --timepoints 02 05 07
 ```
 
@@ -331,12 +285,9 @@ There is one mandatory argument:
 
 There is one optional argument:
 
-- `--timepoints`:  list of time points to process. Example 00 15 62.  If omitted **all** time points are processed
+- `--timepoints`: list of time points to process. Example 00 15 62. If omitted **all** time points are processed
 
 See [this page](https://caretdashcaret.com/2015/05/19/how-to-run-blender-headless-from-the-command-line-without-the-gui/) for instructions on how to retrieve the path to `Blender` on your machine.
-
-
-
 
 ### Quantify
 
@@ -344,8 +295,7 @@ This module handles all quantifications on cells.
 
 ![The MorphoBlend AddOn](Images/Quantify.png)
 
-**Morphometrics:** this computes several metrics on the selected cells. The results are displayed in a table, that can be searched, sorted, cleared and saved to disk as `.CSV` file. For the latter, type or set the path to the output file by pressing the  folder icon.
-The output file will contain in addition to the name of the cell and the collections in belongs to, the following metrics:
+**Morphometrics:** this computes several metrics on the selected cells. The results are displayed in a table, that can be searched, sorted, cleared and saved to disk as `.CSV` file. For the latter, type or set the path to the output file by pressing the folder icon. The output file will contain in addition to the name of the cell and the collections in belongs to, the following metrics:
 
 - Volume (in µm3)
 - Area of (in µm2)
@@ -368,8 +318,104 @@ This modules contains tools to arrange and visualise cells and tissues.
 
 Not yet implemented.
 
+### Updates
+
+From `v0.6` onward, MorphoBlend can automatically check for updates.
+
+#### The 'Updates' panel
+
+![Updates Panel: No Update available](Images/Updates_panel.png)
+
+If the updater is configured to run in the backgound (see below) and an update is available a message will be displayed in this section.
+
+![Updates Panel: Update available](Images/Update_available.png)
+
+Clicking on `Update` will install the latest version of MorphoBlend.
+
+You can trigger a manual search for update by visiting the `MorphoBlend Udpater Preferences`.
+
+#### MorphoBlend Udpater Preferences
+
+You can configure the updater by going into 'Preferences \> Addons \> MorphoBlend'
+
+![MorphoBlend Updater Preferences](Images/Updater.png)
+
+Checking for update can be done automatically by ticking the `Auto-check for Update` box and configure the interval or by pressing the circular arrows button.
+
+![MorphoBlend Updater Preferences: an udpate is available](Images/Updater_panel_update_avail.png)
+
+If an update is available, you can install it.
+
+**Important**:
+
+- After an installation you can always restore MorphoBlend to the previous version by clicking on `Restore addon backup`.
+- It is also possible to browse all available MorphoBlend releases and install a specific version by selectin `Install Master/old version`
+
 ## Known bugs & limitations
 
 **Import**: The very first import after (re)starting Blender usually skips the first file. Erasing the cells, and repeating the import solves the issue.
 
 **Quantify: colorize metric**: the lookup table remains in the 3D viewport until `Blender` is quit & relaunched.
+
+## Release notes
+
+##### v0.6 \|  \[2024-12-04\]
+
+- Provided nuclei and cells exists as separate objects, MorphoBlend can now link cells to the nuclei they contain. The link information is preserved when measurements are made.
+- MorphoBlend can now automatically update!
+- Miscelanous code restructuring and improvement
+
+##### v0.5.2 \| Headless mode for 3D connectivity graph \[2021-04-26\]
+
+- Headless extraction of the 3D connectivity graph of cells from the command line
+
+##### v0.5.1 \| Basic export and misc. improvements \[2020-11-22\]
+
+- Basic export of each cell as `PLY`
+- Improved performances of headless importer
+- Improved performances of Filtering based on volume: implemented caching to speed up repeated filtering.
+
+##### v0.5.0 \| Cell tracking and 3D connectivity graph \[2020-10-16\]
+
+- Basic tracking of cells over time to establish lineages
+- Extraction of the 3D connectivity graph of cells
+- Code cleanup, bug fixing and misc. improvement
+
+##### v0.4.0 \| Assign root tissues & headless import \[2020-09-21\]
+
+- Assign radial root tissues (layers)
+- Set visibility of groups of tissues
+- Headless import: it is now possible to import PLY files directly from the command line.
+- Voxel dimensions (*x* and *y*) are now set from the magnification.
+
+##### v0.3.5 \| Time point navigation \[2020-09-04\]
+
+- Navigate through time points using the keyboard.
+- Clear the *Filter results* collection (without deleting the objects!).
+- Improved readability and style of code.
+
+##### v0.3.4 \| Filter cells based on volume \[2020-08-14\]
+
+Cells which volume is in a given range are selected and listed (as aliases) in a *Filter results* collection. Works on a selection or on *all* cells of the scene (visible or not).
+
+##### v0.3.3 \| Bulk color cells in collection \[2020-08-12\]
+
+All cells present in a collection matching a given pattern (`regex`-style) can be colored.
+
+##### v0.3.2 \| Bug fixes \[2020-08-10\]
+
+##### v0.3.1 \| Bug fixes & improvements \[2020-08-07\]
+
+Fixed (nasty) bug affecting the volume computation. Colorize cells according to volume or area.
+
+##### v0.3.0 \| Splitting and merging \[2020-08-07\]
+
+Cells can be split and merged interactively. Cells to be processed can be added/removed from the `Work List` which can be navigated.
+
+##### v0.2.0 \| Quantification and visualisation \[2020-08-01\]
+
+Quantification of cell volumes & area.
+
+##### v0.1.0 \| Initial release \[2019-12-18\]
+
+Import and Process modules implemented.

@@ -15,7 +15,6 @@ import importlib
 import os
 import subprocess
 import sys
-
 import bpy
 
 from .Alter import MORPHOBLEND_PT_Alter, register_alter, unregister_alter
@@ -27,16 +26,20 @@ from .Quantify import (MORPHOBLEND_PT_Quantify, register_quantify,
 from .Analyze import MORPHOBLEND_PT_Analyze, register_analyze, unregister_analyze
 from .Render import MORPHOBLEND_PT_Render, register_render, unregister_render
 from .Export import MORPHOBLEND_PT_Export, register_export, unregister_export
+from . import addon_updater_ops
+from .Update import MORPHOBLEND_PT_Updater, MORPHOBLEND_PF_Updater
 
 bl_info = {
-    'name': 'morphoblend',
+    'name': 'MorphoBlend',
     'author': 'Alexis Maizel',
     'description': 'Addon for visualisation, processing and quantification of cell segmentation',
     'blender': (3, 6, 0),
     'version': (0, 6),
     'location': 'View3D',
     'warning': '',
-    'category': 'Generic'
+    'wiki_url': "https://github.com/AlexisMaizel/MorphoBlend",
+	'tracker_url': "https://github.com/AlexisMaizel/MorphoBlend/issues",
+	'category': 'Generic'
 }
 # This is the main MorphoBlend Module
 # Creates the main Panel (MorphoBlend) and registers & attaches the different subpanels Operators
@@ -44,7 +47,8 @@ bl_info = {
 
 class VIEW3D_PT_MorphoBlend(bpy.types.Panel):
     bl_idname = 'VIEW3D_PT_MorphoBlend'
-    bl_label = f"MorphoBlend v{'.'.join(map(str, bl_info.get('version')))}"
+    version_str = '.'.join(map(str, bl_info.get('version')))
+    bl_label = f"MorphoBlend v{version_str}"
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'UI'
     bl_category = 'MorphoBlend'
@@ -111,6 +115,8 @@ uninstall_packages_list = ['treelib']
 
 
 morphoblend_classes = (VIEW3D_PT_MorphoBlend,
+        MORPHOBLEND_PF_Updater,
+        MORPHOBLEND_PT_Updater,
         MORPHOBLEND_PT_Import,
         MORPHOBLEND_PT_Process,
         MORPHOBLEND_PT_Alter,
@@ -120,13 +126,14 @@ morphoblend_classes = (VIEW3D_PT_MorphoBlend,
         MORPHOBLEND_PT_Export,
         )
 
-register_init, unregister_init = bpy.utils.register_classes_factory(morphoblend_classes)
-
 
 def register():
+    addon_updater_ops.register(bl_info)
+    for cls in morphoblend_classes:
+        addon_updater_ops.make_annotations(cls)  # Avoid blender 2.8 warnings.
+        bpy.utils.register_class(cls)
     # uninstall_packages(uninstall_packages_list)
     install_packages(install_packages_list)
-    register_init()
     register_import()
     register_process()
     register_alter()
@@ -144,4 +151,6 @@ def unregister():
     unregister_alter()
     unregister_process()
     unregister_import()
-    unregister_init()
+    addon_updater_ops.unregister()
+    for cls in reversed(morphoblend_classes):
+        bpy.utils.unregister_class(cls)

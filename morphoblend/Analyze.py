@@ -25,11 +25,7 @@ from mathutils import Vector
 from mathutils.bvhtree import BVHTree
 from networkx.readwrite import json_graph
 
-from .Utilities import (assign_material, bmesh_copy_from_object, col_hierarchy,
-                        create_materials_palette, distance2D, distance3D,
-                        get_collection, get_global_coordinates, get_parent,
-                        make_collection, move_obj_to_coll, move_obj_to_subcoll,
-                        previous_and_next, collections_from_pattern, show_active_tp)
+from .Utilities import *
 
 # ------------------------------------------------------------------------
 #    Global variable
@@ -95,7 +91,7 @@ class AnalyzeProperties(bpy.types.PropertyGroup):
     )
     bool_at_color_cells: BoolProperty(
         name='Color cells',
-        description="Color cells according to layer",
+        description="Color objects according to layer",
         default=True
     )
     plane_at_ref: BoolVectorProperty(
@@ -142,18 +138,18 @@ class AnalyzeProperties(bpy.types.PropertyGroup):
     )
     bool_at_all: BoolProperty(
         name='Assign to all',
-        description='Assign tissue to all cells also the other time points or hidden ones',
+        description='Assign tissue to all objects also the other time points or hidden ones',
         default=False
     )
     threshold_tracking: FloatProperty(
         name='',
-        description='Below this cells are considered the same across time points',
+        description='Below this objects are considered the same across time points',
         default=3.750,
         precision=3
     )
     bool_track_all: BoolProperty(
         name='Track all cells',
-        description='Track all cells also the other time points or hidden ones',
+        description='Track all objects also the other time points or hidden ones',
         default=False
     )
     import_export_track_path: StringProperty(
@@ -164,7 +160,7 @@ class AnalyzeProperties(bpy.types.PropertyGroup):
     )
     bool_3dconnect_all: BoolProperty(
         name='Analyze all cells',
-        description='Extract 3D neigbours for all cells also the other time points or hidden ones',
+        description='Extract 3D neigbours for all objects also the other time points or hidden ones',
         default=False
     )
     import_export_networks_path: StringProperty(
@@ -190,7 +186,11 @@ class AnalyzeProperties(bpy.types.PropertyGroup):
         default='',
         subtype='FILE_PATH'
     )
-
+    bool_nuc2cell_sort: BoolProperty(
+        name='Sort non mapped',
+        description='Sort non mapped to collections',
+        default=True
+    )
 
 class SceneAttribute(bpy.types.PropertyGroup):
     key: bpy.props.StringProperty(name="Scene attribute key")
@@ -395,10 +395,10 @@ class MORPHOBLEND_OT_PositionRootLayersReference(bpy.types.Operator):
 
 
 class MORPHOBLEND_OT_Lineages_Create(bpy.types.Operator):
-    '''Track cells across time points based on position'''
+    '''Track objects across time points based on position'''
     bl_idname = 'morphoblend.track_cells'
     bl_label = 'track cells'
-    bl_descripton = 'Track cells across time points based on position'
+    bl_descripton = 'Track objects across time points based on position'
 
     @classmethod
     def poll(cls, context):
@@ -472,7 +472,7 @@ class MORPHOBLEND_OT_Lineages_Create(bpy.types.Operator):
 
 
 class MORPHOBLEND_OT_Lineages_Clear(bpy.types.Operator):
-    '''Color tracked cells based on lineages'''
+    '''Color tracked objects based on lineages'''
     bl_idname = 'morphoblend.clear_lineages'
     bl_label = 'Clear lineages'
     bl_descripton = 'Clear lineages'
@@ -562,10 +562,10 @@ class MORPHOBLEND_OT_Lineages_Import(bpy.types.Operator):
 
 
 class MORPHOBLEND_OT_Lineages_Color(bpy.types.Operator):
-    '''Color tracked cells based on lineages'''
+    '''Color tracked objects based on lineages'''
     bl_idname = 'morphoblend.color_lineages'
     bl_label = 'Color lineages'
-    bl_descripton = 'Color tracked cells based on lineages'
+    bl_descripton = 'Color tracked objects based on lineages'
 
     palette = 'Qual_bright'
 
@@ -578,7 +578,7 @@ class MORPHOBLEND_OT_Lineages_Color(bpy.types.Operator):
         # Get the materials corresponding to the palette
         materials = create_materials_palette(self.palette)
         for root, tree in g_lineages.items():
-            # pick a color at random in the palette and use it to color all cells of a lineage
+            # pick a color at random in the palette and use it to color all objects of a lineage
             col_index = randrange(0, len(materials))
             for node in PreOrderIter(tree):
                 obj = bpy.context.scene.objects.get(node.obj_name)
@@ -861,11 +861,11 @@ class MORPHOBLEND_OT_3DConnectivity_Draw(bpy.types.Operator):
     def showSubCol(self, context, pattern):
         analyze_op = context.scene.analyze_tool
         # Retrieve hiearchy of all collection and their parents
-        cols_tree = col_hierarchy(bpy.context.scene.collection, levels=9)
-        all_cols = {i: k for k, v in cols_tree.items() for i in v}
+        collections_hierarchy = col_hierarchy(bpy.context.scene.collection, levels=9)
+        all_collections = {i: k for k, v in cols_tree.items() for i in v}
         # Parse all collections and process the ones matching the pattern but not the one that are time points
         for col in all_cols:
-            if not re.search(pattern, col.name) and not re.match(analyze_op.tp_pattern, col.name):
+            if not re.search(pattern, col.name) and not match(analyze_op.tp_pattern, col.name):
                 col.hide_viewport = True
                 col.hide_render = True
         return None
@@ -1091,7 +1091,8 @@ class MORPHOBLEND_OT_Nuc2Cell_Cells_clear(bpy.types.Operator):
 
     @classmethod
     def poll(cls, context):
-        return True
+        map_lists = mapping_lists()
+        return  len(map_lists.cells) > 0
 
     def execute(self, context):
         clear_mapping_lists('cells')
@@ -1106,9 +1107,11 @@ class MORPHOBLEND_OT_Nuc2Cell_Nuclei_clear(bpy.types.Operator):
     bl_description = 'Clear set of nuclei to use for mapping '
     bl_options = {'INTERNAL'}
 
+
     @classmethod
     def poll(cls, context):
-        return True
+        map_lists = mapping_lists()
+        return  len(map_lists.nuclei) > 0
 
     def execute(self, context):
         clear_mapping_lists('nuclei')
@@ -1145,6 +1148,7 @@ class MORPHOBLEND_OT_Nuc2Cell_Map (bpy.types.Operator):
         map_list  = mapping_lists()
         return map_list.cells and map_list.nuclei
 
+
     def  is_point_inside(self, point, obj):
         """
         Checks if a point is inside the mesh of an object.
@@ -1165,8 +1169,9 @@ class MORPHOBLEND_OT_Nuc2Cell_Map (bpy.types.Operator):
         # Get the angle between the normal and the target-closest-pt vector (from the dot prod)
         angle = acos(min(max(dot_prod, -1), 1)) * 180 / pi
         # Allow for some rounding error
-        inside = angle < 90-0.02
+        inside = angle < 45
         return inside
+
 
     def execute(self, context):
             k = 0
@@ -1177,24 +1182,34 @@ class MORPHOBLEND_OT_Nuc2Cell_Map (bpy.types.Operator):
                     if cell_obj.type == 'MESH':
                         mapped =self.is_point_inside(nuc_center, cell_obj)
                         if mapped:
-                            # Store the child's world transformation
-                            world_matrix = nuc_obj.matrix_world.copy()
-                            # Set the parent
-                            nuc_obj.parent = cell_obj
-                            # Restore the world transformation
-                            nuc_obj.matrix_world = world_matrix
+                            set_parent(nuc_obj, cell_obj)
                             k += 1
                             break
-            info_mess = f"{k} mapping(s) done!"
+            info_mess = f"{k} mapping(s) found!"
             self.report({'INFO'}, info_mess)
+            if context.scene.analyze_tool.bool_nuc2cell_sort:
+                for cell_obj in map_lists.cells:
+                    if not cell_obj.children:
+                        move_obj_to_subcoll(cell_obj, "Cells_Orphaned" , as_sub_coll=False)
+                for nuc_obj in map_lists.nuclei:
+                    if not nuc_obj.parent:
+                        move_obj_to_subcoll(nuc_obj, "Nuclei_Orphaned", as_sub_coll=False)
+            clear_mapping_lists("nuclei")
+            clear_mapping_lists("cells")
             return {'FINISHED'}
-
 
 
 # ------------------------------------------------------------------------
 #    Operator modules
 # ------------------------------------------------------------------------
 def showSubCol(context, pattern):
+    """
+    Hide all collections that do not match the given pattern and are not time points.
+
+    Args:
+        context: The Blender context.
+        pattern: The regex pattern to match collection names.
+    """
     analyze_op = context.scene.analyze_tool
     # Retrieve hiearchy of all collection and their parents
     cols_tree = col_hierarchy(bpy.context.scene.collection, levels=9)
@@ -1237,21 +1252,12 @@ def store_lineages(lineages):
 def retrieve_lineages(context):
     importer = JsonImporter()
     for i in range(len(context.scene.g_lineages)):
-        item = context.scene.g_lineages[i]
+        scene_attribute = context.scene.g_lineages[i]
+        tree = importer.import_(scene_attribute.value)
+        global g_lineages
         tree = importer.import_(item.value)
         g_lineages[item.key] = tree
     return None
-
-
-"""
-def lineages_from_parent_child_pairs(node, relationships):
-    ''' Make lineages from (child, parent) pairs; value of node defines elements w/o parents. Returns a nested dict.
-    Not used. Lifted from: https://stackoverflow.com/questions/444296/how-to-efficiently-build-a-tree-from-a-flat-structure'''
-    return {
-        v: lineages_from_parent_child_pairs(v, relationships)
-        for v in [x[0] for x in relationships if x[1] == node]
-    }
-"""
 
 
 # ------------------------------------------------------------------------
@@ -1276,9 +1282,9 @@ class MORPHOBLEND_PT_Analyze(bpy.types.Panel):
         box = layout.box()
         row = box.row()
         if len(bpy.context.selected_objects) > 1:
-            text_box = f"Assign root layers [{str(len(bpy.context.selected_objects))} selected cells]"
+            text_box = f"Assign root layers [{str(len(bpy.context.selected_objects))} selected objects]"
         else:
-            text_box = f"Assign root layers [{str(len(bpy.context.selected_objects))} selected cell]"
+            text_box = f"Assign root layers [{str(len(bpy.context.selected_objects))} selected object]"
         row.label(text=text_box, icon='NODE_SEL')
 
         row = box.row()
@@ -1308,27 +1314,28 @@ class MORPHOBLEND_PT_Analyze(bpy.types.Panel):
         row.operator(MORPHOBLEND_OT_AssignRootLayers.bl_idname, text='Assign layers', icon='PLUS')
         row.operator(MORPHOBLEND_OT_ClearRootLayers.bl_idname, text='Clear layers', icon='X')
 
-        box = layout.box()
-        row = box.row()
-        row.label(text="Track cells", icon='EVENT_PAGEDOWN')
 
-        row = box.row()
-        row.label(text="Threshold for tracking (µm):")
-        row.prop(analyze_op, "threshold_tracking")
+        # box = layout.box()
+        # row = box.row()
+        # row.label(text="Track cells", icon='EVENT_PAGEDOWN')
 
-        row = box.row()
-        row.prop(analyze_op, "bool_track_all")
-        row.operator(MORPHOBLEND_OT_Lineages_Create.bl_idname, text="Track", icon='TRACKING_REFINE_BACKWARDS')
-        row.operator(MORPHOBLEND_OT_Lineages_Load.bl_idname, text='Load', icon='ADD')
-        row.operator(MORPHOBLEND_OT_Lineages_Color.bl_idname, text="Color", icon='RESTRICT_COLOR_ON')
-        row.operator(MORPHOBLEND_OT_Lineages_Clear.bl_idname, text="Clear", icon='X')
+        # row = box.row()
+        # row.label(text="Threshold for tracking (µm):")
+        # row.prop(analyze_op, "threshold_tracking")
 
-        row = box.row()
-        row.prop(analyze_op, 'import_export_track_path')
+        # row = box.row()
+        # row.prop(analyze_op, "bool_track_all")
+        # row.operator(MORPHOBLEND_OT_Lineages_Create.bl_idname, text="Track", icon='TRACKING_REFINE_BACKWARDS')
+        # row.operator(MORPHOBLEND_OT_Lineages_Load.bl_idname, text='Load', icon='ADD')
+        # row.operator(MORPHOBLEND_OT_Lineages_Color.bl_idname, text="Color", icon='RESTRICT_COLOR_ON')
+        # row.operator(MORPHOBLEND_OT_Lineages_Clear.bl_idname, text="Clear", icon='X')
 
-        row = box.row()
-        row.operator(MORPHOBLEND_OT_Lineages_Export.bl_idname, text="Export", icon='EXPORT')
-        row.operator(MORPHOBLEND_OT_Lineages_Import.bl_idname, text="Import", icon='IMPORT')
+        # row = box.row()
+        # row.prop(analyze_op, 'import_export_track_path')
+
+        # row = box.row()
+        # row.operator(MORPHOBLEND_OT_Lineages_Export.bl_idname, text="Export", icon='EXPORT')
+        # row.operator(MORPHOBLEND_OT_Lineages_Import.bl_idname, text="Import", icon='IMPORT')
 
         box = layout.box()
         row = box.row()
@@ -1356,15 +1363,30 @@ class MORPHOBLEND_PT_Analyze(bpy.types.Panel):
 
         box = layout.box()
         row = box.row()
-        row.label(text="Map Nuclei to Cells", icon='PIVOT_INDIVIDUAL')
+        if len(bpy.context.selected_objects) > 1:
+            text_box = f"Map Nuclei to Cells [{str(len(bpy.context.selected_objects))} selected objects]"
+        else:
+            text_box = f"Map Nuclei to Cells [{str(len(bpy.context.selected_objects))} selected object]"
+        row.label(text=text_box, icon='PIVOT_INDIVIDUAL')
 
         row = box.row()
-        row.operator(MORPHOBLEND_OT_Nuc2Cell_Cells.bl_idname, text='Define Cells Set', icon='META_CUBE')
-        row.operator(MORPHOBLEND_OT_Nuc2Cell_Nuclei.bl_idname, text='Define Nuclei Set', icon='META_BALL')
+        row.operator(MORPHOBLEND_OT_Nuc2Cell_Cells.bl_idname, text='Add to Cells Set', icon='META_CUBE')
+        row.operator(MORPHOBLEND_OT_Nuc2Cell_Nuclei.bl_idname, text='Add to Nuclei Set', icon='META_BALL')
+        map_list  = mapping_lists()
+        if len(map_list.cells)>0:
+            text_n_cell = f"Clear Cells Set [{str(len(map_list.cells))}]"
+        else:
+            text_n_cell = f"Clear Cells Set"
+        if len(map_list.nuclei)>0:
+            text_n_nuc = f"Clear Nuclei Set [{str(len(map_list.nuclei))}]"
+        else:
+            text_n_nuc = f"Clear Nuclei Set"
+
         row = box.row()
-        row.operator(MORPHOBLEND_OT_Nuc2Cell_Cells_clear.bl_idname, text='Clear Cells Set', icon='CANCEL')
-        row.operator(MORPHOBLEND_OT_Nuc2Cell_Nuclei_clear.bl_idname, text='Clear Nuclei Set', icon='CANCEL')
+        row.operator(MORPHOBLEND_OT_Nuc2Cell_Cells_clear.bl_idname, text=text_n_cell, icon='CANCEL')
+        row.operator(MORPHOBLEND_OT_Nuc2Cell_Nuclei_clear.bl_idname, text=text_n_nuc, icon='CANCEL')
         row = box.row()
+        row.prop(analyze_op, 'bool_nuc2cell_sort')
         row.operator(MORPHOBLEND_OT_Nuc2Cell_Map.bl_idname, text='Map', icon='CON_TRACKTO')
 
 
@@ -1377,12 +1399,12 @@ render_classes = (AnalyzeProperties,
     MORPHOBLEND_OT_AssignRootLayers,
     MORPHOBLEND_OT_ClearRootLayers,
     MORPHOBLEND_OT_PositionRootLayersReference,
-    MORPHOBLEND_OT_Lineages_Create,
-    MORPHOBLEND_OT_Lineages_Color,
-    MORPHOBLEND_OT_Lineages_Clear,
-    MORPHOBLEND_OT_Lineages_Import,
-    MORPHOBLEND_OT_Lineages_Export,
-    MORPHOBLEND_OT_Lineages_Load,
+    # MORPHOBLEND_OT_Lineages_Create,
+    # MORPHOBLEND_OT_Lineages_Color,
+    # MORPHOBLEND_OT_Lineages_Clear,
+    # MORPHOBLEND_OT_Lineages_Import,
+    # MORPHOBLEND_OT_Lineages_Export,
+    # MORPHOBLEND_OT_Lineages_Load,
     MORPHOBLEND_OT_3DConnectivity_Create,
     MORPHOBLEND_OT_3DConnectivity_Load,
     MORPHOBLEND_OT_3DConnectivity_Clear,
